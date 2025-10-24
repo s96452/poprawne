@@ -3,1263 +3,803 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jaka to melodia? - Logowanie</title>
+    <title>Jaka to melodia?</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-            position: relative;
-        }
-
-        .container {
-            max-width: 400px;
-            width: 100%;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-            position: relative;
-            width: 100%;
-            padding: 0 20px;
-        }
-
-        h1 {
-            font-size: 42px;
-            font-weight: 800;
-            margin-bottom: 10px;
-            letter-spacing: -1px;
-            background: linear-gradient(45deg, #fff, #a8dadc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1.2;
-        }
-
-        .project-info {
-            text-align: center;
-            font-size: 14px;
-            color: #8d99ae;
-            margin-bottom: 20px;
-            font-style: italic;
-        }
-
-        /* Ikona użytkownika */
-        .user-menu {
-            position: absolute;
-            top: 0;
-            right: 20px;
-            z-index: 1000;
-        }
-
-        .user-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(45deg, #2a9d8f, #264653);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .user-icon:hover {
-            transform: scale(1.1);
-            border-color: #a8dadc;
-        }
-
-        .user-icon svg {
-            width: 20px;
-            height: 20px;
-            fill: #fff;
-        }
-
-        .user-dropdown {
-            position: absolute;
-            top: 50px;
-            right: 0;
-            background: rgba(26, 26, 46, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            padding: 10px 0;
-            min-width: 180px;
-            backdrop-filter: blur(20px);
-            display: none;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .user-dropdown.show {
-            display: block;
-            animation: fadeInDown 0.3s ease;
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .user-info-dropdown {
-            padding: 12px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            color: #a8dadc;
-            font-weight: 600;
-        }
-
-        .dropdown-item {
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .dropdown-item:hover {
-            background: rgba(168, 218, 220, 0.2);
-        }
-
-        .dropdown-item.logout {
-            color: #e63946;
-        }
-
-        .dropdown-item.logout:hover {
-            background: rgba(230, 57, 70, 0.2);
-        }
-
-        .dropdown-icon {
-            width: 16px;
-            height: 16px;
-        }
-
-        .auth-container {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 30px;
-            backdrop-filter: blur(10px);
-            margin-bottom: 20px;
-        }
-
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 25px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .auth-tab {
-            flex: 1;
-            text-align: center;
-            padding: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border-bottom: 3px solid transparent;
-        }
-
-        .auth-tab.active {
-            color: #a8dadc;
-            border-bottom-color: #a8dadc;
-        }
-
-        .auth-form {
-            display: none;
-        }
-
-        .auth-form.active {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #a8dadc;
-        }
-
-        .form-input {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            padding: 14px 16px;
-            color: #fff;
-            font-size: 16px;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .form-input:focus {
-            border-color: #a8dadc;
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .form-input::placeholder {
-            color: #8d99ae;
-        }
-
-        .auth-btn {
-            width: 100%;
-            background: linear-gradient(45deg, #2a9d8f, #264653);
-            border: none;
-            border-radius: 10px;
-            padding: 14px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-        }
-
-        .auth-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(42, 157, 143, 0.4);
-        }
-
-        .auth-switch {
-            text-align: center;
-            margin-top: 20px;
-            color: #8d99ae;
-        }
-
-        .auth-switch a {
-            color: #a8dadc;
-            text-decoration: none;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .auth-switch a:hover {
-            text-decoration: underline;
-        }
-
-        .error-message {
-            background: rgba(230, 57, 70, 0.1);
-            border: 1px solid rgba(230, 57, 70, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 20px;
-            color: #e63946;
-            font-weight: 600;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .success-message {
-            background: rgba(42, 157, 143, 0.1);
-            border: 1px solid rgba(42, 157, 143, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 20px;
-            color: #2a9d8f;
-            font-weight: 600;
-            display: none;
-        }
-
-        .success-message.show {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-
-        /* Styl dla strony gry (będzie ukryta na początku) */
-        .game-container {
-            display: none;
-        }
-
-        .guess-title {
-            text-align: center;
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 30px;
-            color: #a8dadc;
-        }
-
-        .progress-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding: 0 5px;
-        }
-
-        .progress-time {
-            font-size: 13px;
-            color: #4a4a6d;
-            padding: 6px 10px;
-            border-radius: 15px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .progress-time.active {
-            color: #fff;
-            background: linear-gradient(45deg, #457b9d, #a8dadc);
-            font-weight: 600;
-        }
-
-        .guesses-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .guess-tile {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 14px 20px;
-            text-align: center;
-            font-size: 14px;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            line-height: 1.3;
-        }
-
-        .guess-tile.skipped {
-            color: #8d99ae;
-            font-style: italic;
-            background: rgba(141, 153, 174, 0.1);
-            border-color: rgba(141, 153, 174, 0.3);
-        }
-
-        .guess-tile.incorrect {
-            color: #e63946;
-            background: rgba(230, 57, 70, 0.1);
-            border-color: rgba(230, 57, 70, 0.3);
-        }
-
-        .guess-tile.correct {
-            color: #2a9d8f;
-            background: rgba(42, 157, 143, 0.1);
-            border-color: rgba(42, 157, 143, 0.3);
-        }
-
-        .song-title {
-            font-weight: 600;
-            font-size: 15px;
-            margin-bottom: 2px;
-        }
-
-        .song-artist {
-            font-size: 12px;
-            opacity: 0.8;
-            font-weight: 500;
-        }
-
-        .controls-section {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
-
-        .play-btn {
-            background: linear-gradient(45deg, #2a9d8f, #264653);
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
-            color: #fff;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            box-shadow: 0 4px 15px rgba(42, 157, 143, 0.3);
-        }
-
-        .play-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(42, 157, 143, 0.4);
-        }
-
-        .play-icon {
-            width: 20px;
-            height: 20px;
-            background: #fff;
-            clip-path: polygon(0 0, 0 100%, 100% 50%);
-            margin-left: 2px;
-        }
-
-        .search-section {
-            flex: 1;
-            position: relative;
-        }
-
-        .search-input {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 14px 16px;
-            color: #fff;
-            font-size: 16px;
-            outline: none;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-
-        .search-input::placeholder {
-            color: #8d99ae;
-        }
-
-        .search-input:focus {
-            border-color: #a8dadc;
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .skip-btn {
-            background: linear-gradient(45deg, #e63946, #d00000);
-            border: none;
-            border-radius: 12px;
-            padding: 14px 20px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
-        }
-
-        .skip-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(230, 57, 70, 0.4);
-        }
-
-        .reset-section {
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-            margin-bottom: 15px;
-        }
-
-        .reset-btn {
-            background: linear-gradient(45deg, #8d99ae, #6c757d);
-            border: none;
-            border-radius: 50%;
-            padding: 12px;
-            color: #fff;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 44px;
-            height: 44px;
-            box-shadow: 0 4px 12px rgba(141, 153, 174, 0.3);
-        }
-
-        .reset-btn:hover {
-            transform: translateY(-2px) rotate(90deg);
-            box-shadow: 0 6px 15px rgba(141, 153, 174, 0.4);
-        }
-
-        .reset-icon {
-            width: 20px;
-            height: 20px;
-            position: relative;
-        }
-
-        .reset-icon::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 8px;
-            width: 4px;
-            height: 4px;
-            border-top: 2px solid #fff;
-            border-right: 2px solid #fff;
-            transform: rotate(45deg);
-        }
-
-        .reset-icon::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 8px;
-            width: 4px;
-            height: 4px;
-            border-bottom: 2px solid #fff;
-            border-left: 2px solid #fff;
-            transform: rotate(45deg);
-        }
-
-        .suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: rgba(26, 26, 46, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            margin-top: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-            backdrop-filter: blur(20px);
-        }
-
-        .suggestion-item {
-            padding: 12px 16px;
-            cursor: pointer;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.2s ease;
-            color: #fff;
-        }
-
-        .suggestion-item:hover {
-            background: rgba(168, 218, 220, 0.2);
-        }
-
-        .suggestion-item:last-child {
-            border-bottom: none;
-        }
-
-        .result-message {
-            text-align: center;
-            color: #e63946;
-            font-size: 18px;
-            font-weight: 600;
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(230, 57, 70, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(230, 57, 70, 0.3);
-            display: none;
-        }
-
-        .game-success-message {
-            text-align: center;
-            color: #2a9d8f;
-            font-size: 18px;
-            font-weight: 600;
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(42, 157, 143, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(42, 157, 143, 0.3);
-            display: none;
-        }
-
-        .result-message.show, .game-success-message.show {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .registration-success {
-            text-align: center;
-            padding: 30px;
-            background: rgba(42, 157, 143, 0.1);
-            border: 1px solid rgba(42, 157, 143, 0.3);
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .success-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2a9d8f;
-            margin-bottom: 10px;
-        }
-
-        .success-text {
-            color: #a8dadc;
-            margin-bottom: 20px;
-        }
-
-        /* Responsywność */
-        @media (max-width: 480px) {
-            body {
-                padding: 20px 10px;
-            }
-
-            .container {
-                padding: 0 10px;
-            }
-            
-            h1 {
-                font-size: 32px;
-            }
-            
-            .project-info {
-                font-size: 12px;
-            }
-            
-            .auth-container {
-                padding: 20px 15px;
-            }
-
-            .user-menu {
-                right: 10px;
-            }
-
-            .progress-container {
-                gap: 5px;
-            }
-
-            .progress-time {
-                font-size: 11px;
-                padding: 4px 6px;
-            }
-
-            .controls-section {
-                gap: 8px;
-            }
-
-            .skip-btn {
-                padding: 14px 15px;
-                font-size: 14px;
-            }
-
-            .search-input {
-                font-size: 14px;
-                padding: 12px 14px;
-            }
-
-            .guess-tile {
-                padding: 12px 15px;
-                font-size: 13px;
-            }
-
-            .song-title {
-                font-size: 14px;
-            }
-
-            .song-artist {
-                font-size: 11px;
-            }
-        }
-
-        @media (max-width: 360px) {
-            h1 {
-                font-size: 28px;
-            }
-
-            .auth-container {
-                padding: 15px 10px;
-            }
-
-            .progress-time {
-                font-size: 10px;
-                padding: 3px 4px;
-            }
-
-            .controls-section {
-                flex-direction: column;
-            }
-
-            .play-btn, .skip-btn {
-                width: 100%;
-            }
-
-            .search-section {
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 320px) {
-            h1 {
-                font-size: 24px;
-            }
-
-            .progress-container {
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 8px;
-            }
-
-            .progress-time {
-                flex: 0 0 calc(33.333% - 10px);
-                text-align: center;
-            }
-        }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+        body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;position:relative}
+        .container{max-width:400px;width:100%;margin:0 auto}
+        header{text-align:center;margin-bottom:40px;width:100%}
+        h1{font-size:42px;font-weight:800;margin-bottom:10px;background:linear-gradient(45deg,#fff,#a8dadc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2}
+        .project-info{text-align:center;font-size:14px;color:#8d99ae;margin-bottom:20px;font-style:italic}
+        
+        .side-menu,.user-menu{position:fixed;top:20px;z-index:1000}
+        .side-menu{left:20px}.user-menu{right:20px}
+        .menu-icon,.user-icon{width:45px;height:45px;background:linear-gradient(45deg,#2a9d8f,#264653);border-radius:50%;cursor:pointer;transition:all .3s ease;border:2px solid rgba(255,255,255,.2);box-shadow:0 4px 15px rgba(0,0,0,.3)}
+        .menu-icon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+        .menu-bar{width:20px;height:2px;background:#fff;border-radius:1px}
+        .user-icon{display:flex;align-items:center;justify-content:center}
+        .menu-icon:hover,.user-icon:hover{transform:scale(1.1);border-color:#a8dadc;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+        
+        .menu-dropdown,.user-dropdown{position:absolute;top:55px;background:rgba(26,26,46,.95);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:10px 0;min-width:200px;backdrop-filter:blur(20px);display:none;box-shadow:0 8px 25px rgba(0,0,0,.3)}
+        .menu-dropdown{left:0}.user-dropdown{right:0}
+        .menu-dropdown.show,.user-dropdown.show{display:block;animation:fadeInDown .3s ease}
+        @keyframes fadeInDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+        
+        .menu-item,.dropdown-item{padding:12px 16px;cursor:pointer;transition:all .2s ease;color:#fff;display:flex;align-items:center;gap:8px;font-size:14px}
+        .menu-item:hover,.dropdown-item:hover{background:rgba(168,218,220,.2)}
+        .dropdown-item.logout{color:#e63946}.dropdown-item.logout:hover{background:rgba(230,57,70,.2)}
+        .user-info-dropdown{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.1);color:#a8dadc;font-weight:600;font-size:14px}
+        
+        .popup-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:none;justify-content:center;align-items:center;z-index:2000;backdrop-filter:blur(5px)}
+        .popup-overlay.show{display:flex;animation:fadeIn .3s ease}
+        .popup{background:rgba(26,26,46,.95);border:1px solid rgba(255,255,255,.2);border-radius:15px;padding:30px;max-width:400px;width:90%;text-align:center;backdrop-filter:blur(20px);box-shadow:0 20px 40px rgba(0,0,0,.4);transform:scale(.9);opacity:0;transition:all .3s ease}
+        .popup.show{transform:scale(1);opacity:1}
+        .popup.success{border-color:rgba(42,157,143,.5)}.popup.error{border-color:rgba(230,57,70,.5)}
+        .popup-icon{font-size:48px;margin-bottom:20px}.popup.success .popup-icon{color:#2a9d8f}.popup.error .popup-icon{color:#e63946}
+        .popup-title{font-size:24px;font-weight:700;margin-bottom:15px}.popup.success .popup-title{color:#2a9d8f}.popup.error .popup-title{color:#e63946}
+        .popup-message{font-size:16px;line-height:1.5;margin-bottom:25px;color:#a8dadc}
+        .popup-btn{background:linear-gradient(45deg,#2a9d8f,#264653);border:none;border-radius:10px;padding:12px 30px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:all .3s ease;min-width:120px}
+        .popup-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(42,157,143,.4)}
+        .popup.error .popup-btn{background:linear-gradient(45deg,#e63946,#d00000)}.popup.error .popup-btn:hover{box-shadow:0 6px 20px rgba(230,57,70,.4)}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        
+        .auth-container{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:15px;padding:30px;backdrop-filter:blur(10px);margin-bottom:20px}
+        .auth-tabs{display:flex;margin-bottom:25px;border-bottom:1px solid rgba(255,255,255,.1)}
+        .auth-tab{flex:1;text-align:center;padding:12px;cursor:pointer;font-weight:600;transition:all .3s ease;border-bottom:3px solid transparent}
+        .auth-tab.active{color:#a8dadc;border-bottom-color:#a8dadc}
+        .auth-form{display:none}.auth-form.active{display:block;animation:fadeIn .5s ease}
+        .form-group{margin-bottom:20px}
+        .form-label{display:block;margin-bottom:8px;font-weight:600;color:#a8dadc}
+        .form-input{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:14px 16px;color:#fff;font-size:16px;outline:none;transition:all .3s ease}
+        .form-input:focus{border-color:#a8dadc;background:rgba(255,255,255,.15)}.form-input::placeholder{color:#8d99ae}
+        .auth-btn{width:100%;background:linear-gradient(45deg,#2a9d8f,#264653);border:none;border-radius:10px;padding:14px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:all .3s ease;margin-top:10px}
+        .auth-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(42,157,143,.4)}
+        .auth-switch{text-align:center;margin-top:20px;color:#8d99ae}
+        .auth-switch a{color:#a8dadc;text-decoration:none;font-weight:600;cursor:pointer}.auth-switch a:hover{text-decoration:underline}
+        .error-message,.success-message{background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:12px;margin-bottom:20px;font-weight:600;display:none}
+        .error-message.show,.success-message.show{display:block;animation:fadeIn .5s ease}
+        .success-message{background:rgba(42,157,143,.1);border-color:rgba(42,157,143,.3);color:#2a9d8f}
+        
+        .game-container{display:none}
+        .guess-title{text-align:center;font-size:24px;font-weight:600;margin-bottom:30px;color:#a8dadc}
+        .progress-container{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;padding:0 5px}
+        .progress-time{font-size:13px;color:#4a4a6d;padding:6px 10px;border-radius:15px;transition:all .3s ease;font-weight:500}
+        .progress-time.active{color:#fff;background:linear-gradient(45deg,#457b9d,#a8dadc);font-weight:600}
+        .guesses-container{display:flex;flex-direction:column;gap:10px;margin-bottom:30px}
+        .guess-tile{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 20px;text-align:center;font-size:14px;min-height:60px;display:flex;align-items:center;justify-content:center;flex-direction:column;backdrop-filter:blur(10px);transition:all .3s ease;line-height:1.3}
+        .guess-tile.skipped{color:#8d99ae;font-style:italic;background:rgba(141,153,174,.1);border-color:rgba(141,153,174,.3)}
+        .guess-tile.incorrect{color:#e63946;background:rgba(230,57,70,.1);border-color:rgba(230,57,70,.3)}
+        .guess-tile.correct{color:#2a9d8f;background:rgba(42,157,143,.1);border-color:rgba(42,157,143,.3)}
+        .song-title{font-weight:600;font-size:15px;margin-bottom:2px}.song-artist{font-size:12px;opacity:.8;font-weight:500}
+        
+        .controls-section{display:flex;gap:15px;margin-bottom:20px;align-items:center;justify-content:center}
+        .play-btn{background:linear-gradient(45deg,#2a9d8f,#264653);border:none;border-radius:12px;padding:14px;color:#fff;cursor:pointer;outline:none;transition:all .3s ease;display:flex;align-items:center;justify-content:center;width:50px;height:50px;box-shadow:0 4px 15px rgba(42,157,143,.3)}
+        .play-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(42,157,143,.4)}
+        .play-icon{width:20px;height:20px;background:#fff;clip-path:polygon(0 0,0 100%,100% 50%);margin-left:2px}
+        .search-section{flex:1;position:relative;display:flex;gap:10px}
+        .search-input{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:14px 16px;color:#fff;font-size:16px;outline:none;backdrop-filter:blur(10px);transition:all .3s ease}
+        .search-input::placeholder{color:#8d99ae}.search-input:focus{border-color:#a8dadc;background:rgba(255,255,255,.15)}
+        
+        .action-btn{background:linear-gradient(45deg,#e63946,#d00000);border:none;border-radius:12px;padding:12px 16px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;outline:none;transition:all .3s ease;white-space:nowrap;box-shadow:0 4px 15px rgba(230,57,70,.3);min-width:90px;letter-spacing:0.5px}
+        .action-btn.submit{background:linear-gradient(45deg,#2a9d8f,#264653);box-shadow:0 4px 15px rgba(42,157,143,.3)}
+        .action-btn:hover{transform:translateY(-2px)}
+        .action-btn.submit:hover{box-shadow:0 6px 20px rgba(42,157,143,.4)}
+        .action-btn:not(.submit):hover{box-shadow:0 6px 20px rgba(230,57,70,.4)}
+        
+        .suggestions{position:absolute;top:100%;left:0;right:0;background:rgba(26,26,46,.98);border:1px solid rgba(168,218,220,.3);border-radius:12px;margin-top:8px;max-height:200px;overflow-y:auto;z-index:1000;display:none;backdrop-filter:blur(20px);box-shadow:0 8px 25px rgba(0,0,0,.4)}
+        .suggestion-item{padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.1);transition:all .2s ease;color:#fff;font-size:14px}
+        .suggestion-item:hover{background:rgba(168,218,220,.2);color:#a8dadc}.suggestion-item:last-child{border-bottom:none}
+        
+        .reset-section{display:flex;justify-content:center;gap:15px;margin-top:10px;margin-bottom:15px}
+        .reset-btn{background:linear-gradient(45deg,#8d99ae,#6c757d);border:none;border-radius:50%;padding:12px;color:#fff;cursor:pointer;outline:none;transition:all .3s ease;display:flex;align-items:center;justify-content:center;width:44px;height:44px;box-shadow:0 4px 12px rgba(141,153,174,.3)}
+        .reset-btn:hover{transform:translateY(-2px) rotate(90deg);box-shadow:0 6px 15px rgba(141,153,174,.4)}
+        .reset-icon{width:20px;height:20px;position:relative}
+        .reset-icon::before,.reset-icon::after{content:'';position:absolute;left:8px;width:4px;height:4px;border:2px solid #fff;transform:rotate(45deg)}
+        .reset-icon::before{top:0;border-bottom:none;border-left:none}
+        .reset-icon::after{bottom:0;border-top:none;border-right:none}
+
+        /* Nowe style dla podpowiedzi */
+        .hint-container{position:fixed;right:20px;top:50%;transform:translateY(-50%);background:rgba(26,26,46,.95);border:1px solid rgba(168,218,220,.3);border-radius:15px;padding:20px;backdrop-filter:blur(20px);display:none;max-width:250px;box-shadow:0 8px 25px rgba(0,0,0,.4)}
+        .hint-container.show{display:block;animation:fadeInRight .3s ease}
+        .hint-title{font-size:18px;font-weight:700;margin-bottom:15px;color:#a8dadc;text-align:center}
+        .hint-text{font-size:20px;font-weight:600;letter-spacing:2px;text-align:center;line-height:1.4;color:#fff;font-family:'Courier New',monospace}
+        @keyframes fadeInRight{from{opacity:0;transform:translateY(-50%) translateX(20px)}to{opacity:1;transform:translateY(-50%) translateX(0)}}
+
+        /* Style dla rankingu */
+        .ranking-tabs{display:flex;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.1)}
+        .ranking-tab{flex:1;text-align:center;padding:12px;cursor:pointer;font-weight:600;transition:all .3s ease;border-bottom:3px solid transparent}
+        .ranking-tab.active{color:#a8dadc;border-bottom-color:#a8dadc}
+        .ranking-list{max-height:400px;overflow-y:auto}
+        .ranking-item{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.1);transition:all .2s ease}
+        .ranking-item:hover{background:rgba(168,218,220,.1)}
+        .ranking-item.current-user{background:rgba(42,157,143,.2);border-left:3px solid #2a9d8f}
+        .ranking-position{width:30px;font-weight:700;font-size:16px;text-align:center}
+        .ranking-position-1{color:gold}
+        .ranking-position-2{color:silver}
+        .ranking-position-3{color:#cd7f32}
+        .ranking-info{flex:1;margin-left:12px}
+        .ranking-username{font-weight:600;font-size:14px}
+        .ranking-stats{display:flex;justify-content:space-between;font-size:12px;color:#8d99ae;margin-top:4px}
+        .ranking-score{font-weight:600;color:#a8dadc}
+        
+        /* Nowe style dla statystyk */
+        .stats-popup .popup{max-width:450px}
+        .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0}
+        .stat-item{background:rgba(255,255,255,.05);border-radius:10px;padding:15px;text-align:center}
+        .stat-value{font-size:24px;font-weight:700;color:#a8dadc;margin-bottom:5px}
+        .stat-label{font-size:12px;color:#8d99ae;text-transform:uppercase;letter-spacing:1px}
+        
+        @media (max-width:480px){body{padding:20px 10px}.side-menu,.user-menu{top:15px}.side-menu{left:15px}.user-menu{right:15px}.menu-icon,.user-icon{width:40px;height:40px}.menu-dropdown,.user-dropdown{top:50px;min-width:180px}.popup{padding:25px 20px;width:95%}.popup-title{font-size:20px}.popup-message{font-size:14px}.container{padding:0 10px}h1{font-size:32px}.project-info{font-size:12px}.auth-container{padding:20px 15px}.progress-container{gap:5px}.progress-time{font-size:11px;padding:4px 6px}.controls-section{gap:8px}.action-btn{padding:12px 14px;font-size:13px;min-width:85px}.search-input{font-size:14px;padding:12px 14px}.guess-tile{padding:12px 15px;font-size:13px}.song-title{font-size:14px}.song-artist{font-size:11px}.hint-container{right:10px;max-width:200px;padding:15px}.hint-text{font-size:16px}.stats-grid{grid-template-columns:1fr;gap:10px}}
+        @media (max-width:360px){.side-menu,.user-menu{top:10px}.side-menu{left:10px}.user-menu{right:10px}h1{font-size:28px}.auth-container{padding:15px 10px}.progress-time{font-size:10px;padding:3px 4px}.search-section{flex-direction:column}.action-btn{width:100%}.reset-section{flex-direction:column;align-items:center}.hint-container{display:none}}
+        @media (max-width:320px){h1{font-size:24px}.progress-container{flex-wrap:wrap;justify-content:center;gap:8px}.progress-time{flex:0 0 calc(33.333% - 10px);text-align:center}}
     </style>
 </head>
 <body>
-    <!-- STRONA LOGOWANIA -->
+    <div class="side-menu" id="sideMenu" style="display:none">
+        <div class="menu-icon" onclick="toggleMenuDropdown()"><div class="menu-bar"></div><div class="menu-bar"></div><div class="menu-bar"></div></div>
+        <div class="menu-dropdown" id="menuDropdown">
+            <div class="menu-item" onclick="showRules()">📝 Zasady gry</div>
+            <div class="menu-item" onclick="showRanking()">🏆 Rankingi</div>
+            <div class="menu-item" onclick="showStats()">📊 Statystyki</div>
+        </div>
+    </div>
+
+    <!-- Kontener podpowiedzi -->
+    <div class="hint-container" id="hintContainer">
+        <div class="hint-title">Podpowiedź</div>
+        <div class="hint-text" id="hintText"></div>
+    </div>
+
     <div class="container" id="authContainer">
-        <header>
-            <h1>Jaka to melodia?</h1>
-            <div class="project-info">projekt inżynierski - Patryk Ragus</div>
-        </header>
-        
+        <header><h1>Jaka to melodia?</h1><div class="project-info">projekt inżynierski - Patryk Ragus</div></header>
         <div class="auth-container">
             <div class="auth-tabs">
                 <div class="auth-tab active" data-tab="login">Logowanie</div>
                 <div class="auth-tab" data-tab="register">Rejestracja</div>
             </div>
-
-            <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
-
-            <!-- Formularz logowania -->
+            <div class="error-message" id="errorMessage"></div><div class="success-message" id="successMessage"></div>
             <div class="auth-form active" id="loginForm">
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="loginEmail" placeholder="Wpisz swój email">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Hasło</label>
-                    <input type="password" class="form-input" id="loginPassword" placeholder="Wpisz swoje hasło">
-                </div>
+                <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="loginEmail" placeholder="Wpisz swój email"></div>
+                <div class="form-group"><label class="form-label">Hasło</label><input type="password" class="form-input" id="loginPassword" placeholder="Wpisz swoje hasło"></div>
                 <button class="auth-btn" onclick="login()">Zaloguj się</button>
-                <div class="auth-switch">
-                    Nie masz konta? <a onclick="showRegister()">Zarejestruj się</a>
-                </div>
+                <div class="auth-switch">Nie masz konta? <a onclick="showRegister()">Zarejestruj się</a></div>
             </div>
-
-            <!-- Formularz rejestracji -->
             <div class="auth-form" id="registerForm">
-                <div class="form-group">
-                    <label class="form-label">Nazwa użytkownika</label>
-                    <input type="text" class="form-input" id="registerUsername" placeholder="Wpisz nazwę użytkownika">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="registerEmail" placeholder="Wpisz swój email">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Hasło</label>
-                    <input type="password" class="form-input" id="registerPassword" placeholder="Wpisz swoje hasło">
-                </div>
+                <div class="form-group"><label class="form-label">Nazwa użytkownika</label><input type="text" class="form-input" id="registerUsername" placeholder="Wpisz nazwę użytkownika"></div>
+                <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="registerEmail" placeholder="Wpisz swój email"></div>
+                <div class="form-group"><label class="form-label">Hasło</label><input type="password" class="form-input" id="registerPassword" placeholder="Wpisz swoje hasło"></div>
                 <button class="auth-btn" onclick="register()">Zarejestruj się</button>
-                <div class="auth-switch">
-                    Masz już konto? <a onclick="showLogin()">Zaloguj się</a>
-                </div>
-            </div>
-
-            <!-- Sukces rejestracji -->
-            <div class="auth-form" id="registrationSuccess">
-                <div class="registration-success">
-                    <div class="success-title">Rejestracja udana!</div>
-                    <div class="success-text">Twoje konto zostało utworzone pomyślnie. Możesz się teraz zalogować.</div>
-                    <button class="auth-btn" onclick="showLogin()">Przejdź do logowania</button>
-                </div>
+                <div class="auth-switch">Masz już konto? <a onclick="showLogin()">Zaloguj się</a></div>
             </div>
         </div>
     </div>
 
-    <!-- STRONA GRY (ukryta na początku) -->
     <div class="container game-container" id="gameContainer">
-        <header>
-            <div class="user-menu">
-                <div class="user-icon" onclick="toggleUserDropdown()">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                    </svg>
-                </div>
-                <div class="user-dropdown" id="userDropdown">
-                    <div class="user-info-dropdown">
-                        Witaj, <span id="userDisplayName"></span>!
-                    </div>
-                    <div class="dropdown-item logout" onclick="logout()">
-                        <svg class="dropdown-icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
-                        </svg>
-                        Wyloguj
-                    </div>
-                </div>
-            </div>
-            
-            <h1>Jaka to melodia?</h1>
-            <div class="project-info">projekt inżynierski - Patryk Ragus</div>
-            <div class="guess-title">Guess!</div>
-        </header>
-        
+        <header><h1>Jaka to melodia?</h1><div class="project-info">projekt inżynierski - Patryk Ragus</div><div class="guess-title">Guess!</div></header>
         <div class="progress-container">
-            <div class="progress-time active">0.2s</div>
-            <div class="progress-time">0.5s</div>
-            <div class="progress-time">3s</div>
-            <div class="progress-time">5s</div>
-            <div class="progress-time">15s</div>
+            <div class="progress-time active">0.2s</div><div class="progress-time">0.5s</div><div class="progress-time">3s</div><div class="progress-time">5s</div><div class="progress-time">15s</div>
         </div>
-        
         <div class="guesses-container">
-            <div class="guess-tile"></div>
-            <div class="guess-tile"></div>
-            <div class="guess-tile"></div>
-            <div class="guess-tile"></div>
-            <div class="guess-tile"></div>
+            <div class="guess-tile"></div><div class="guess-tile"></div><div class="guess-tile"></div><div class="guess-tile"></div><div class="guess-tile"></div>
         </div>
         
         <div class="controls-section">
-            <button class="play-btn">
-                <div class="play-icon"></div>
-            </button>
             <div class="search-section">
-                <input type="text" class="search-input" placeholder="Search a song">
-                <div class="suggestions">
-                    <!-- Sugestie będą dynamicznie ładowane -->
-                </div>
+                <input type="text" class="search-input" placeholder="Wpisz tytuł piosenki..." id="songSearchInput">
+                <button class="action-btn" id="actionBtn">Skip</button>
+                <div class="suggestions" id="songSuggestions"></div>
             </div>
-            <button class="skip-btn">Skip</button>
-        </div>
-
-        <div class="reset-section">
-            <button class="reset-btn" title="Nowa gra">
-                <div class="reset-icon"></div>
-            </button>
         </div>
         
-        <div class="result-message" id="resultMessage"></div>
-        <div class="game-success-message" id="gameSuccessMessage"></div>
+        <div class="reset-section">
+            <button class="play-btn" id="playBtn"><div class="play-icon"></div></button>
+            <button class="reset-btn" onclick="startNewGame()"><div class="reset-icon"></div></button>
+        </div>
     </div>
 
+    <div class="user-menu" id="userMenu" style="display:none">
+        <div class="user-icon" onclick="toggleUserDropdown()">👤</div>
+        <div class="user-dropdown" id="userDropdown">
+            <div class="user-info-dropdown">Witaj, <span id="userDisplayName"></span>!</div>
+            <div class="dropdown-item" onclick="showStats()">📊 Statystyki</div>
+            <div class="dropdown-item logout" onclick="logout()">🚪 Wyloguj</div>
+        </div>
+    </div>
+
+    <!-- Popup dla podpowiedzi -->
+    <div class="popup-overlay" id="hintPopup">
+        <div class="popup success">
+            <div class="popup-icon">💡</div>
+            <div class="popup-title">Potrzebujesz podpowiedzi?</div>
+            <div class="popup-message">Po 4 próbach możesz skorzystać z podpowiedzi, która pokaże tytuł piosenki z ukrytymi literami.</div>
+            <div style="display:flex;gap:10px;justify-content:center">
+                <button class="popup-btn" onclick="acceptHint()">Tak, pokaż</button>
+                <button class="popup-btn" style="background:linear-gradient(45deg,#8d99ae,#6c757d)" onclick="declineHint()">Nie, dzięki</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup rankingu -->
+    <div class="popup-overlay" id="rankingPopup">
+        <div class="popup success" style="max-width:500px">
+            <div class="popup-icon">🏆</div>
+            <div class="popup-title">Rankingi</div>
+            <div class="ranking-tabs">
+                <div class="ranking-tab active" data-tab="daily">Dzienne</div>
+                <div class="ranking-tab" data-tab="weekly">Tygodniowe</div>
+                <div class="ranking-tab" data-tab="monthly">Miesięczne</div>
+            </div>
+            <div class="ranking-list" id="rankingList">
+                <!-- Ranking będzie ładowany dynamicznie -->
+            </div>
+            <button class="popup-btn" onclick="hidePopup('rankingPopup')" style="margin-top:20px">Zamknij</button>
+        </div>
+    </div>
+
+    <!-- Popup statystyk -->
+    <div class="popup-overlay" id="statsPopup">
+        <div class="popup success stats-popup">
+            <div class="popup-icon">📊</div>
+            <div class="popup-title">Twoje statystyki</div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="statGamesPlayed">0</div>
+                    <div class="stat-label">Rozegrane gry</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statBestScore">0</div>
+                    <div class="stat-label">Najlepszy wynik</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statAvgScore">0</div>
+                    <div class="stat-label">Średni wynik</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statPerfectGames">0</div>
+                    <div class="stat-label">Perfekcyjne gry</div>
+                </div>
+            </div>
+            <button class="popup-btn" onclick="hidePopup('statsPopup')">Zamknij</button>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="registrationPopup"><div class="popup success"><div class="popup-icon">✓</div><div class="popup-title">Rejestracja udana!</div><div class="popup-message">Twoje konto zostało utworzone pomyślnie. Możesz się teraz zalogować.</div><button class="popup-btn" onclick="hidePopup('registrationPopup')">OK</button></div></div>
+    <div class="popup-overlay" id="successPopup"><div class="popup success"><div class="popup-icon">🎯</div><div class="popup-title">Gratulacje!</div><div class="popup-message" id="successMessageText"></div><button class="popup-btn" onclick="startNewGame()">Nowa gra</button></div></div>
+    <div class="popup-overlay" id="failurePopup"><div class="popup error"><div class="popup-icon">✗</div><div class="popup-title">Koniec gry</div><div class="popup-message" id="failureMessageText"></div><button class="popup-btn" onclick="startNewGame()">Nowa gra</button></div></div>
+    <div class="popup-overlay" id="rulesPopup"><div class="popup success"><div class="popup-icon">📝</div><div class="popup-title">Zasady gry</div><div class="popup-message" style="text-align:left;line-height:1.6"><p><strong>Cel gry:</strong> Odgadnij tytuł piosenki na podstawie fragmentu melodii.</p><p><strong>Zasady:</strong></p><ul style="margin-left:20px;margin-bottom:15px"><li>Masz 5 prób na odgadnięcie piosenki</li><li>Każda kolejna próba daje dłuższy fragment melodii</li><li>Czasy fragmentów: 0.2s, 0.5s, 3s, 5s, 15s</li><li>Możesz pominąć piosenkę, ale tracisz próbę</li><li>Wpisz tytuł piosenki w polu wyszukiwania</li></ul><p><strong>Powodzenia!</strong></p></div><button class="popup-btn" onclick="hidePopup('rulesPopup')">Rozumiem</button></div></div>
+
     <script>
-        // SYSTEM LOGOWANIA
-        let users = JSON.parse(localStorage.getItem('users')) || [];
-        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
-
-        // Sprawdź czy użytkownik jest już zalogowany
-        if (currentUser) {
-            showGame();
-        }
-
-        function showLogin() {
-            document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
-            document.querySelector('[data-tab="login"]').classList.add('active');
-            document.getElementById('loginForm').classList.add('active');
-            hideMessages();
-        }
-
-        function showRegister() {
-            document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
-            document.querySelector('[data-tab="register"]').classList.add('active');
-            document.getElementById('registerForm').classList.add('active');
-            hideMessages();
-        }
-
-        function showRegistrationSuccess() {
-            document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
-            document.getElementById('registrationSuccess').classList.add('active');
-        }
-
-        function hideMessages() {
-            document.getElementById('errorMessage').classList.remove('show');
-            document.getElementById('successMessage').classList.remove('show');
-        }
-
-        function showError(message) {
-            const errorElement = document.getElementById('errorMessage');
-            errorElement.textContent = message;
-            errorElement.classList.add('show');
-            document.getElementById('successMessage').classList.remove('show');
-        }
-
-        function showSuccess(message) {
-            const successElement = document.getElementById('successMessage');
-            successElement.textContent = message;
-            successElement.classList.add('show');
-            document.getElementById('errorMessage').classList.remove('show');
-        }
-
-        function register() {
-            const username = document.getElementById('registerUsername').value.trim();
-            const email = document.getElementById('registerEmail').value.trim();
-            const password = document.getElementById('registerPassword').value.trim();
-
-            if (!username || !email || !password) {
-                showError('Wszystkie pola są wymagane!');
-                return;
+        let users=JSON.parse(localStorage.getItem('users'))||[],
+            currentUser=JSON.parse(localStorage.getItem('currentUser'))||null,
+            gameInstance=null,
+            rankings=JSON.parse(localStorage.getItem('rankings'))||{
+                daily: [],
+                weekly: [],
+                monthly: []
             }
 
-            if (users.find(user => user.email === email)) {
-                showError('Użytkownik z tym emailem już istnieje!');
-                return;
+        // Inicjalizacja rankingów przy pierwszym uruchomieniu
+        initializeRankings()
+
+        if(currentUser)showGame()
+
+        // INICJALIZACJA SYSTEMU RANKINGOWEGO
+        function initializeRankings(){
+            const now=new Date()
+            const today=new Date(now.getFullYear(),now.getMonth(),now.getDate())
+            const lastReset=JSON.parse(localStorage.getItem('lastRankingReset'))||{
+                daily: today.getTime()-86400000, // Wczoraj
+                weekly: today.getTime()-604800000, // Tydzień temu
+                monthly: today.getTime()-2592000000 // Miesiąc temu
             }
 
-            if (users.find(user => user.username === username)) {
-                showError('Nazwa użytkownika jest już zajęta!');
-                return;
+            // Sprawdź czy trzeba zresetować rankingi
+            const shouldResetDaily=now.getTime()-lastReset.daily>=86400000
+            const shouldResetWeekly=now.getTime()-lastReset.weekly>=604800000
+            const shouldResetMonthly=now.getTime()-lastReset.monthly>=2592000000
+
+            if(shouldResetDaily){
+                rankings.daily=[]
+                lastReset.daily=now.getTime()
+            }
+            if(shouldResetWeekly){
+                rankings.weekly=[]
+                lastReset.weekly=now.getTime()
+            }
+            if(shouldResetMonthly){
+                rankings.monthly=[]
+                lastReset.monthly=now.getTime()
             }
 
-            const newUser = {
-                id: Date.now(),
-                username,
-                email,
-                password,
-                createdAt: new Date().toISOString()
-            };
+            localStorage.setItem('rankings',JSON.stringify(rankings))
+            localStorage.setItem('lastRankingReset',JSON.stringify(lastReset))
+        }
 
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
+        // SYSTEM RANKINGOWY
+        function updateRankings(score, hasPerfectGame=false){
+            if(!currentUser) return
             
-            // Pokaż ekran sukcesu rejestracji
-            showRegistrationSuccess();
+            // Aktualizuj statystyki użytkownika - uwzględnij wszystkie wyniki (dodatnie i ujemne)
+            currentUser.gamesPlayed=(currentUser.gamesPlayed||0)+1
+            currentUser.totalScore=(currentUser.totalScore||0)+score
+            currentUser.bestScore=Math.max(currentUser.bestScore||0,score)
+            currentUser.perfectGames=(currentUser.perfectGames||0)+(hasPerfectGame?1:0)
             
-            // Wyczyść formularz
-            document.getElementById('registerUsername').value = '';
-            document.getElementById('registerEmail').value = '';
-            document.getElementById('registerPassword').value = '';
-        }
-
-        function login() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-
-            if (!email || !password) {
-                showError('Wpisz email i hasło!');
-                return;
+            // Zapisz zaktualizowanego użytkownika
+            const userIndex=users.findIndex(u=>u.id===currentUser.id)
+            if(userIndex!==-1){
+                users[userIndex]=currentUser
+                localStorage.setItem('users',JSON.stringify(users))
             }
-
-            const user = users.find(u => u.email === email && u.password === password);
             
-            if (!user) {
-                showError('Nieprawidłowy email lub hasło!');
-                return;
+            const gameData={
+                username:currentUser.username,
+                score:score,
+                date:new Date().toISOString(),
+                hasPerfectGame:hasPerfectGame
             }
-
-            currentUser = user;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            showGame();
-        }
-
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            showAuth();
-            hideUserDropdown();
-        }
-
-        function toggleUserDropdown() {
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.toggle('show');
-        }
-
-        function hideUserDropdown() {
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.remove('show');
-        }
-
-        function showGame() {
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('gameContainer').style.display = 'block';
-            document.getElementById('userDisplayName').textContent = currentUser.username;
             
-            // Inicjalizuj grę
-            initGame();
+            // Aktualizuj rankingi - uwzględnij wszystkie wyniki
+            updateRankingPeriod('daily',gameData)
+            updateRankingPeriod('weekly',gameData)
+            updateRankingPeriod('monthly',gameData)
+            
+            localStorage.setItem('rankings',JSON.stringify(rankings))
         }
 
-        function showAuth() {
-            document.getElementById('authContainer').style.display = 'block';
-            document.getElementById('gameContainer').style.display = 'none';
-            hideMessages();
-            showLogin();
-        }
-
-        // Zamknij dropdown gdy klikniesz gdzieś indziej
-        document.addEventListener('click', function(event) {
-            const userMenu = document.querySelector('.user-menu');
-            if (!userMenu.contains(event.target)) {
-                hideUserDropdown();
+        function updateRankingPeriod(period,gameData){
+            if(!rankings[period])rankings[period]=[]
+            
+            // Sprawdź czy użytkownik już ma wynik w tym okresie
+            const existingIndex=rankings[period].findIndex(entry=>
+                entry.username===gameData.username
+            )
+            
+            if(existingIndex>=0){
+                // Aktualizuj wynik - suma wszystkich gier
+                rankings[period][existingIndex].score += gameData.score
+            }else{
+                rankings[period].push(gameData)
             }
-        });
+            
+            // Posortuj ranking
+            rankings[period].sort((a,b)=>b.score-a.score)
+            
+            // Ogranicz do top 10
+            rankings[period]=rankings[period].slice(0,10)
+        }
 
-        // Event listeners dla zakładek
-        document.querySelectorAll('.auth-tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                const tabName = this.getAttribute('data-tab');
-                if (tabName === 'login') {
-                    showLogin();
-                } else {
-                    showRegister();
+        // SYSTEM PODPOWIEDZI
+        let currentHintSong = null;
+
+        function showHintPopup(){
+            showPopup('hintPopup')
+        }
+
+        function acceptHint(){
+            hidePopup('hintPopup')
+            showHint()
+        }
+
+        function declineHint(){
+            hidePopup('hintPopup')
+        }
+
+        function showHint(){
+            if(!gameInstance||!gameInstance.currentSong)return
+            
+            // Ustaw aktualną piosenkę dla podpowiedzi
+            currentHintSong = gameInstance.currentSong.title;
+            
+            const hintText=createHintText(currentHintSong)
+            
+            document.getElementById('hintText').textContent=hintText
+            document.getElementById('hintContainer').classList.add('show')
+        }
+
+        function createHintText(title){
+            // Zamień co drugą literę na podkreślenie, zachowując spacje
+            return title.split('').map((char,index)=>{
+                if(char===' ')return '  ' // Podwójna spacja dla odstępów między słowami
+                return index%2===0?char:'_'
+            }).join(' ')
+        }
+
+        function hideHint(){
+            document.getElementById('hintContainer').classList.remove('show')
+            currentHintSong = null;
+        }
+
+        // SYSTEM STATYSTYK
+        function showStats(){
+            if(!currentUser)return
+            
+            document.getElementById('statGamesPlayed').textContent=currentUser.gamesPlayed||0
+            document.getElementById('statBestScore').textContent=currentUser.bestScore||0
+            
+            // POPRAWIONE LICZENIE ŚREDNIEJ - uwzględnia wszystkie gry
+            const avgScore = currentUser.gamesPlayed > 0 ? 
+                Math.round(currentUser.totalScore / currentUser.gamesPlayed) : 0
+            document.getElementById('statAvgScore').textContent=avgScore
+            
+            document.getElementById('statPerfectGames').textContent=currentUser.perfectGames||0
+            
+            showPopup('statsPopup')
+            hideMenuDropdown()
+            hideUserDropdown()
+        }
+
+        // POZOSTAŁE FUNKCJE
+        function showPopup(e){const t=document.getElementById(e);t.classList.add('show'),setTimeout(()=>{t.querySelector('.popup').classList.add('show')},10)}
+        function hidePopup(e){const t=document.getElementById(e),o=t.querySelector('.popup');o.classList.remove('show'),setTimeout(()=>{t.classList.remove('show')},300)}
+        function showRegistrationSuccess(){showPopup('registrationPopup')}
+        function showGameSuccess(e){document.getElementById('successMessageText').textContent=e,showPopup('successPopup')}
+        function showGameFailure(e){document.getElementById('failureMessageText').textContent=e,showPopup('failurePopup')}
+        function showRules(){hideMenuDropdown(),showPopup('rulesPopup')}
+        function showRanking(){hideMenuDropdown(),loadRanking('daily'),showPopup('rankingPopup')}
+        function showLogin(){document.querySelectorAll('.auth-tab').forEach(e=>e.classList.remove('active')),document.querySelectorAll('.auth-form').forEach(e=>e.classList.remove('active')),document.querySelector('[data-tab="login"]').classList.add('active'),document.getElementById('loginForm').classList.add('active'),hideMessages()}
+        function showRegister(){document.querySelectorAll('.auth-tab').forEach(e=>e.classList.remove('active')),document.querySelectorAll('.auth-form').forEach(e=>e.classList.remove('active')),document.querySelector('[data-tab="register"]').classList.add('active'),document.getElementById('registerForm').classList.add('active'),hideMessages()}
+        function hideMessages(){document.getElementById('errorMessage').classList.remove('show'),document.getElementById('successMessage').classList.remove('show')}
+        function showError(e){const t=document.getElementById('errorMessage');t.textContent=e,t.classList.add('show'),document.getElementById('successMessage').classList.remove('show')}
+        function showSuccess(e){const t=document.getElementById('successMessage');t.textContent=e,t.classList.add('show'),document.getElementById('errorMessage').classList.remove('show')}
+        function validateEmail(e){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)}
+        function register(){const e=document.getElementById('registerUsername').value.trim(),t=document.getElementById('registerEmail').value.trim(),o=document.getElementById('registerPassword').value.trim()
+        if(!e||!t||!o)return showError('Wszystkie pola są wymagane!')
+        if(!validateEmail(t))return showError('Proszę podać prawidłowy adres email!')
+        if(users.find(n=>n.username.toLowerCase()===e.toLowerCase()))return showError('Nazwa użytkownika jest już zajęta!')
+        if(users.find(n=>n.email.toLowerCase()===t.toLowerCase()))return showError('Użytkownik z tym emailem już istnieje!')
+        if(o.length<6)return showError('Hasło musi mieć co najmniej 6 znaków!')
+        const n={id:Date.now(),username:e,email:t,password:o,createdAt:new Date().toISOString(),gamesPlayed:0,bestScore:0,totalScore:0,perfectGames:0}
+        users.push(n),localStorage.setItem('users',JSON.stringify(users)),showRegistrationSuccess(),document.getElementById('registerUsername').value='',document.getElementById('registerEmail').value='',document.getElementById('registerPassword').value='',setTimeout(()=>{showLogin()},2000)}
+        function login(){const e=document.getElementById('loginEmail').value.trim(),t=document.getElementById('loginPassword').value.trim()
+        if(!e||!t)return showError('Wpisz email i hasło!')
+        if(!validateEmail(e))return showError('Proszę podać prawidłowy adres email!')
+        const o=users.find(n=>n.email.toLowerCase()===e.toLowerCase()&&n.password===t)
+        if(!o)return showError('Nieprawidłowy email lub hasło!')
+        currentUser=o,localStorage.setItem('currentUser',JSON.stringify(currentUser)),showGame()}
+        function logout(){currentUser=null,localStorage.removeItem('currentUser'),showAuth(),hideUserDropdown()}
+        function toggleUserDropdown(){document.getElementById('userDropdown').classList.toggle('show')}
+        function hideUserDropdown(){document.getElementById('userDropdown').classList.remove('show')}
+        function toggleMenuDropdown(){document.getElementById('menuDropdown').classList.toggle('show')}
+        function hideMenuDropdown(){document.getElementById('menuDropdown').classList.remove('show')}
+        function showGame(){document.getElementById('authContainer').style.display='none',document.getElementById('gameContainer').style.display='block',document.getElementById('userMenu').style.display='block',document.getElementById('sideMenu').style.display='block',document.getElementById('userDisplayName').textContent=currentUser.username,initGame()}
+        function showAuth(){document.getElementById('authContainer').style.display='block',document.getElementById('gameContainer').style.display='none',document.getElementById('userMenu').style.display='none',document.getElementById('sideMenu').style.display='none',hideMessages(),showLogin(),document.getElementById('loginEmail').value='',document.getElementById('loginPassword').value='',document.getElementById('registerUsername').value='',document.getElementById('registerEmail').value='',document.getElementById('registerPassword').value=''}
+        function startNewGame(){hidePopup('successPopup'),hidePopup('failurePopup'),hideHint(),gameInstance&&gameInstance.loadRandomSong()}
+        
+        function updateActionButton(){
+            const e=document.getElementById('songSearchInput')
+            const t=document.getElementById('actionBtn')
+            if(e.value.trim()!==''){
+                t.textContent='Try!'
+                t.classList.add('submit')
+            }else{
+                t.textContent='Skip'
+                t.classList.remove('submit')
+            }
+        }
+
+        function submitGuess(){
+            const e=document.getElementById('songSearchInput')
+            const t=e.value.trim()
+            if(t){
+                gameInstance.checkGuess(t)
+                e.value=''
+                document.getElementById('songSuggestions').style.display='none'
+                updateActionButton()
+            }
+        }
+
+        function skipToNext(){
+            gameInstance.skipToNext()
+            updateActionButton()
+        }
+
+        document.addEventListener('click',e=>{const t=document.getElementById('userMenu'),o=document.getElementById('sideMenu');t&&!t.contains(e.target)&&hideUserDropdown(),o&&!o.contains(e.target)&&hideMenuDropdown()})
+        
+        // DODAJ EVENT LISTENER DO INPUTA DLA AKTUALIZACJI PRZYCISKU
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('songSearchInput')
+            if (searchInput) {
+                searchInput.addEventListener('input', updateActionButton)
+            }
+            
+            document.querySelectorAll('.auth-tab').forEach(e=>{
+                e.addEventListener('click',()=>{
+                    e.getAttribute('data-tab')==='login'?showLogin():showRegister()
+                })
+            })
+            
+            document.querySelectorAll('.ranking-tab').forEach(tab=>{
+                tab.addEventListener('click',function(){
+                    const period=this.getAttribute('data-tab')
+                    loadRanking(period)
+                })
+            })
+        })
+
+        document.getElementById('loginPassword').addEventListener('keypress',e=>{e.key==='Enter'&&login()})
+        document.getElementById('registerPassword').addEventListener('keypress',e=>{e.key==='Enter'&&register()})
+
+        function loadRanking(period){
+            const rankingList=document.getElementById('rankingList')
+            const tabs=document.querySelectorAll('.ranking-tab')
+            
+            // Aktywuj odpowiednią zakładkę
+            tabs.forEach(tab=>{
+                tab.classList.remove('active')
+                if(tab.getAttribute('data-tab')===period){
+                    tab.classList.add('active')
                 }
-            });
-        });
+            })
+            
+            // Załaduj ranking
+            const periodRankings=rankings[period]||[]
+            let html=''
+            
+            if(periodRankings.length===0){
+                html=`<div style="text-align:center;padding:40px;color:#8d99ae">Brak wyników w tym okresie</div>`
+            }else{
+                periodRankings.forEach((entry,index)=>{
+                    const isCurrentUser=currentUser&&entry.username===currentUser.username
+                    const medalClass=index<3?`ranking-position-${index+1}`:''
+                    const medalIcon=index===0?'🥇':index===1?'🥈':index===2?'🥉':''
+                    
+                    html+=`
+                        <div class="ranking-item ${isCurrentUser?'current-user':''}">
+                            <div class="ranking-position ${medalClass}">
+                                ${medalIcon} ${index+1}
+                            </div>
+                            <div class="ranking-info">
+                                <div class="ranking-username">${entry.username}</div>
+                                <div class="ranking-stats">
+                                    <span class="ranking-score">${entry.score} pkt</span>
+                                    ${entry.hasPerfectGame?'<span>⭐ Perfect</span>':''}
+                                </div>
+                            </div>
+                        </div>
+                    `
+                })
+            }
+            
+            rankingList.innerHTML=html
+        }
 
-        // LOGIKA GRY
-        function initGame() {
-            const searchInput = document.querySelector('.search-input');
-            const skipButton = document.querySelector('.skip-btn');
-            const playButton = document.querySelector('.play-btn');
-            const resetButton = document.querySelector('.reset-btn');
-            const suggestions = document.querySelector('.suggestions');
-            const progressTimes = document.querySelectorAll('.progress-time');
-            const guessTiles = document.querySelectorAll('.guess-tile');
-            const resultMessage = document.getElementById('resultMessage');
-            const gameSuccessMessage = document.getElementById('gameSuccessMessage');
+        function initGame(){
+            const e=document.getElementById('songSearchInput'),t=document.getElementById('playBtn'),o=document.getElementById('songSuggestions'),n=document.querySelectorAll('.progress-time'),a=document.querySelectorAll('.guess-tile'),r=document.getElementById('actionBtn')
+            let l=0,s=0,c=null,i=null,d=[0.2,0.5,3,5,15]
             
-            let currentLevel = 0;
-            let currentGuessIndex = 0;
-            let currentSong = null;
-            let audioPlayer = null;
+            const u=[
+                {title:"Blinding Lights",artist:"The Weeknd",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Shape of You",artist:"Ed Sheeran",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Bad Guy",artist:"Billie Eilish",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Flowers",artist:"Miley Cyrus",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"As It Was",artist:"Harry Styles",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Dance Monkey",artist:"Tones and I",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Levitating",artist:"Dua Lipa",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Stay",artist:"The Kid LAROI, Justin Bieber",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Bad Romance",artist:"Lady Gaga",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Baby",artist:"Justin Bieber",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Beautiful",artist:"Christina Aguilera",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"},
+                {title:"Rolling in the Deep",artist:"Adele",audio:"https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav"}
+            ]
+
+            function m(){i=new Audio(),i.preload='auto'}
             
-            const levelDurations = [0.2, 0.5, 3.0, 5.0, 15.0];
-            
-            const songs = [
-                { title: "Blinding Lights", artist: "The Weeknd" },
-                { title: "Shape of You", artist: "Ed Sheeran" },
-                { title: "Bad Guy", artist: "Billie Eilish" },
-                { title: "Flowers", artist: "Miley Cyrus" },
-                { title: "As It Was", artist: "Harry Styles" },
-                { title: "Dance Monkey", artist: "Tones and I" },
-                { title: "Levitating", artist: "Dua Lipa" },
-                { title: "Stay", artist: "The Kid LAROI, Justin Bieber" },
-                { title: "Blinding", artist: "The Weeknd" },
-                { title: "Bad Romance", artist: "Lady Gaga" },
-                { title: "Baby", artist: "Justin Bieber" },
-                { title: "Beautiful", artist: "Christina Aguilera" }
-            ];
-            
-            function initAudio() {
-                audioPlayer = new Audio();
-                audioPlayer.preload = 'auto';
-            }
-            
-            function loadRandomSong() {
-                const randomIndex = Math.floor(Math.random() * songs.length);
-                currentSong = songs[randomIndex];
-                searchInput.value = '';
-                resetGuesses();
-                updateProgress();
-                hideGameMessages();
-            }
-            
-            function resetGuesses() {
-                guessTiles.forEach(tile => {
-                    tile.textContent = '';
-                    tile.className = 'guess-tile';
-                    tile.innerHTML = '';
-                });
-                currentGuessIndex = 0;
-                currentLevel = 0;
-            }
-            
-            function updateProgress() {
-                progressTimes.forEach((time, index) => {
-                    time.className = 'progress-time';
-                    if (index === currentLevel) {
-                        time.classList.add('active');
-                    }
-                });
-            }
-            
-            function showGameResultMessage(message) {
-                resultMessage.textContent = message;
-                resultMessage.classList.add('show');
-            }
-            
-            function showGameSuccessMessage(message) {
-                gameSuccessMessage.textContent = message;
-                gameSuccessMessage.classList.add('show');
-            }
-            
-            function hideGameMessages() {
-                resultMessage.classList.remove('show');
-                gameSuccessMessage.classList.remove('show');
-            }
-            
-            function playFragment() {
-                if (!currentSong || !audioPlayer) return;
+            function p(){
+                const randomIndex=Math.floor(Math.random()*u.length)
+                c=u[randomIndex]
+                document.getElementById('songSearchInput').value=''
+                h()
+                g()
+                document.getElementById('songSearchInput').focus()
+                updateActionButton() // AKTUALIZUJ PRZYCISK PRZY NOWEJ GRZE
+                hideHint() // UKRYWANIE PODPOWIEDZI PRZY NOWEJ GRZE
                 
-                const duration = levelDurations[currentLevel];
-                
-                audioPlayer.src = "https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav";
-                audioPlayer.play().then(() => {
-                    setTimeout(() => {
-                        audioPlayer.pause();
-                        audioPlayer.currentTime = 0;
-                    }, duration * 1000);
-                }).catch(error => {
-                    console.error("Error playing audio:", error);
-                });
+                if(c.audio){
+                    i.src=c.audio
+                    i.load()
+                }
             }
             
-            function filterSuggestions(searchText) {
-                const filteredSongs = songs.filter(song => 
-                    song.title.toLowerCase().includes(searchText.toLowerCase()) ||
+            function h(){
+                a.forEach(e=>{
+                    e.textContent=''
+                    e.className='guess-tile'
+                    e.innerHTML=''
+                })
+                s=0
+                l=0
+            }
+            
+            function g(){
+                n.forEach((e,t)=>{
+                    e.className='progress-time'
+                    if(t===l)e.classList.add('active')
+                })
+            }
+            
+            function f(){
+                if(!c||!i||!c.audio)return
+                
+                const duration=d[l]
+                i.currentTime=0
+                i.play().then(()=>{
+                    setTimeout(()=>{
+                        i.pause()
+                        i.currentTime=0
+                    },duration*1000)
+                }).catch(error=>{
+                    console.error("Błąd odtwarzania audio:",error)
+                    playFallbackSound(duration)
+                })
+            }
+            
+            function playFallbackSound(duration){
+                const fallbackAudio=new Audio("https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav")
+                fallbackAudio.play().then(()=>{
+                    setTimeout(()=>{
+                        fallbackAudio.pause()
+                    },duration*1000)
+                })
+            }
+            
+            function v(searchText){
+                const filteredSongs=u.filter(song=>
+                    song.title.toLowerCase().includes(searchText.toLowerCase())||
                     song.artist.toLowerCase().includes(searchText.toLowerCase())
-                );
+                )
+                o.innerHTML=''
                 
-                suggestions.innerHTML = '';
-                
-                if (filteredSongs.length === 0) {
-                    suggestions.style.display = 'none';
-                    return;
+                if(filteredSongs.length===0){
+                    o.style.display='none'
+                    return
                 }
                 
-                filteredSongs.forEach(song => {
-                    const item = document.createElement('div');
-                    item.className = 'suggestion-item';
-                    item.textContent = `${song.title} - ${song.artist}`;
-                    item.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        searchInput.value = song.title;
-                        suggestions.style.display = 'none';
-                        searchInput.focus();
-                    });
-                    suggestions.appendChild(item);
-                });
-                
-                suggestions.style.display = 'block';
+                filteredSongs.forEach(song=>{
+                    const item=document.createElement('div')
+                    item.className='suggestion-item'
+                    item.textContent=`${song.title} - ${song.artist}`
+                    item.addEventListener('mousedown',e=>{
+                        e.preventDefault()
+                        document.getElementById('songSearchInput').value=song.title
+                        o.style.display='none'
+                        document.getElementById('songSearchInput').focus()
+                        updateActionButton()
+                    })
+                    o.appendChild(item)
+                })
+                o.style.display='block'
             }
-            
-            function checkGuess(guess) {
-                if (!currentSong || currentGuessIndex >= 5) return false;
+
+            // NOWY SYSTEM PUNKTACJI
+            function calculateScore(attemptNumber){
+                const baseScores=[1000,800,600,400,200] // Punkty za każdą próbę
+                const penalty=-100 // Kara za złą odpowiedź/skip na ostatniej próbie
                 
-                const tile = guessTiles[currentGuessIndex];
-                const foundSong = songs.find(song => 
-                    song.title.toLowerCase() === guess.toLowerCase()
-                );
-                
-                if (guess.toLowerCase() === currentSong.title.toLowerCase()) {
-                    // Correct guess
-                    tile.className = 'guess-tile correct';
-                    tile.innerHTML = `
-                        <div class="song-title">${currentSong.title}</div>
-                        <div class="song-artist">${currentSong.artist}</div>
-                    `;
-                    
-                    showGameSuccessMessage(`Gratulacje! Zgadłeś! To było: "${currentSong.title}" - ${currentSong.artist}`);
-                    
-                    return true;
-                } else {
-                    // Incorrect guess
-                    tile.className = 'guess-tile incorrect';
-                    if (foundSong) {
-                        tile.innerHTML = `
-                            <div class="song-title">${foundSong.title}</div>
-                            <div class="song-artist">${foundSong.artist}</div>
-                        `;
-                    } else {
-                        tile.innerHTML = `
-                            <div class="song-title">${guess}</div>
-                            <div class="song-artist">-</div>
-                        `;
-                    }
-                    
-                    currentGuessIndex++;
-                    
-                    if (currentGuessIndex < 5) {
-                        currentLevel = currentGuessIndex;
-                        updateProgress();
-                    }
-                    
-                    if (currentGuessIndex >= 5) {
-                        showGameResultMessage(`To była piosenka: "${currentSong.title}" - ${currentSong.artist}`);
-                    }
-                    
-                    return false;
+                if(attemptNumber<=4){
+                    return baseScores[attemptNumber]
+                }else{
+                    return penalty
                 }
             }
             
-            function skipToNext() {
-                if (currentGuessIndex < 5) {
-                    const tile = guessTiles[currentGuessIndex];
-                    tile.className = 'guess-tile skipped';
-                    tile.innerHTML = `
+            function y(guess){
+                if(!c||s>=5)return false
+                
+                const tile=a[s]
+                const foundSong=u.find(song=>
+                    song.title.toLowerCase()===guess.toLowerCase()
+                )
+                
+                if(guess.toLowerCase()===c.title.toLowerCase()){
+                    tile.className='guess-tile correct'
+                    tile.innerHTML=`
+                        <div class="song-title">${c.title}</div>
+                        <div class="song-artist">${c.artist}</div>
+                    `
+                    
+                    // NOWY SYSTEM PUNKTACJI
+                    const score=calculateScore(s)
+                    const hasPerfectGame=(s===0) // Perfect game jeśli zgadnięte za 1 razem
+                    
+                    updateRankings(score, hasPerfectGame)
+                    
+                    showGameSuccess(`Zgadłeś za ${s+1} razem! Zdobywasz ${score} punktów!`)
+                    updateActionButton()
+                    return true
+                }else{
+                    // POKAŻ WPISANY TYTUŁ W KAFELKU (nawet jeśli błędny)
+                    tile.className='guess-tile incorrect'
+                    tile.innerHTML=`
+                        <div class="song-title">${guess}</div>
+                        <div class="song-artist">${foundSong ? foundSong.artist : '-'}</div>
+                    `
+                    s++
+                    
+                    // Pokaz podpowiedź po 4 próbach - BEZ OPOŹNIENIA
+                    if(s===4){
+                        showHintPopup()
+                    }
+                    
+                    if(s<5){
+                        l=s
+                        g()
+                    }
+                    if(s>=5){
+                        // Kara za niezgadnięcie
+                        const penaltyScore=calculateScore(4)
+                        updateRankings(penaltyScore, false)
+                        showGameFailure(`To była piosenka: "${c.title}" - ${c.artist}. Straciłeś ${Math.abs(penaltyScore)} punktów.`)
+                    }
+                    updateActionButton()
+                    return false
+                }
+            }
+            
+            function b(){
+                if(s<5){
+                    const tile=a[s]
+                    // POKAŻ "SKIPPED" W KAFELKU
+                    tile.className='guess-tile skipped'
+                    tile.innerHTML=`
                         <div class="song-title">SKIPPED</div>
                         <div class="song-artist">-</div>
-                    `;
-                    currentGuessIndex++;
+                    `
+                    s++
                     
-                    if (currentGuessIndex < 5) {
-                        currentLevel = currentGuessIndex;
-                        updateProgress();
+                    // Pokaz podpowiedź po 4 próbach - BEZ OPOŹNIENIA
+                    if(s===4){
+                        showHintPopup()
                     }
                     
-                    if (currentGuessIndex >= 5) {
-                        showGameResultMessage(`To była piosenka: "${currentSong.title}" - ${currentSong.artist}`);
+                    if(s<5){
+                        l=s
+                        g()
+                    }
+                    if(s>=5){
+                        // Kara za skip na ostatniej próbie
+                        const penaltyScore=calculateScore(4)
+                        updateRankings(penaltyScore, false)
+                        showGameFailure(`To była piosenka: "${c.title}" - ${c.artist}. Straciłeś ${Math.abs(penaltyScore)} punktów.`)
                     }
                 }
-                searchInput.value = '';
-                searchInput.focus();
+                document.getElementById('songSearchInput').value=''
+                document.getElementById('songSearchInput').focus()
+                updateActionButton()
             }
             
-            // Event listeners dla gry
-            playButton.addEventListener('click', playFragment);
-            skipButton.addEventListener('click', skipToNext);
-            resetButton.addEventListener('click', loadRandomSong);
+            t.addEventListener('click',f)
+            r.addEventListener('click',()=>{
+                if(e.value.trim()!=='')submitGuess()
+                else skipToNext()
+            })
+            e.addEventListener('keypress',event=>{
+                if(event.key==='Enter')submitGuess()
+            })
+            e.addEventListener('input',()=>{
+                const searchText=e.value.trim()
+                if(searchText.length>0)v(searchText)
+                else o.style.display='none'
+                updateActionButton()
+            })
+            e.addEventListener('focus',()=>{
+                const searchText=e.value.trim()
+                if(searchText.length>0)v(searchText)
+            })
+            e.addEventListener('blur',()=>{
+                setTimeout(()=>{
+                    o.style.display='none'
+                },200)
+            })
             
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    const guess = this.value.trim();
-                    if (guess) {
-                        checkGuess(guess);
-                        this.value = '';
-                        suggestions.style.display = 'none';
-                    }
-                }
-            });
-            
-            searchInput.addEventListener('input', function() {
-                const searchText = this.value.trim();
-                if (searchText.length > 0) {
-                    filterSuggestions(searchText);
-                } else {
-                    suggestions.style.display = 'none';
-                }
-            });
-            
-            searchInput.addEventListener('focus', function() {
-                const searchText = this.value.trim();
-                if (searchText.length > 0) {
-                    filterSuggestions(searchText);
-                }
-            });
-            
-            searchInput.addEventListener('blur', function() {
-                setTimeout(() => {
-                    suggestions.style.display = 'none';
-                }, 200);
-            });
-            
-            // Initialize game
-            initAudio();
-            searchInput.focus();
-            loadRandomSong();
+            m()
+            p()
+            gameInstance={
+                loadRandomSong:p,
+                checkGuess:y,
+                skipToNext:b,
+                currentSong:c
+            }
         }
     </script>
 </body>
