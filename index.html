@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jaka to melodia?</title>
     <style>
+        /* STYLE POZOSTAJĄ BEZ ZMIAN */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
         body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;position:relative}
         .container{max-width:400px;width:100%;margin:0 auto}
@@ -123,7 +124,7 @@
         .ranking-score{font-weight:600;color:#a8dadc}
         
         /* Nowe style dla statystyk */
-        .stats-popup .popup{max-width:450px}
+        .stats-popup .popup{max-width:500px}
         .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0}
         .stat-item{background:rgba(255,255,255,.05);border-radius:10px;padding:15px;text-align:center}
         .stat-value{font-size:24px;font-weight:700;color:#a8dadc;margin-bottom:5px}
@@ -159,7 +160,7 @@
             </div>
             <div class="error-message" id="errorMessage"></div><div class="success-message" id="successMessage"></div>
             <div class="auth-form active" id="loginForm">
-                <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="loginEmail" placeholder="Wpisz swój email"></div>
+                <div class="form-group"><label class="form-label">Nazwa użytkownika lub Email</label><input type="text" class="form-input" id="loginUsernameOrEmail" placeholder="Wpisz nazwę użytkownika lub email"></div>
                 <div class="form-group"><label class="form-label">Hasło</label><input type="password" class="form-input" id="loginPassword" placeholder="Wpisz swoje hasło"></div>
                 <button class="auth-btn" onclick="login()">Zaloguj się</button>
                 <div class="auth-switch">Nie masz konta? <a onclick="showRegister()">Zarejestruj się</a></div>
@@ -258,6 +259,10 @@
                     <div class="stat-value" id="statPerfectGames">0</div>
                     <div class="stat-label">Perfekcyjne gry</div>
                 </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statPlayTime">00:00:00</div>
+                    <div class="stat-label">Łączny czas gry</div>
+                </div>
             </div>
             <button class="popup-btn" onclick="hidePopup('statsPopup')">Zamknij</button>
         </div>
@@ -276,10 +281,161 @@
                 daily: [],
                 weekly: [],
                 monthly: []
-            }
+            },
+            gameStartTime = null,
+            playTimeInterval = null,
+            statsUpdateInterval = null;
 
         // Inicjalizacja rankingów przy pierwszym uruchomieniu
         initializeRankings()
+
+        // GLOBALNE EVENT LISTENERY - dodane tylko raz
+        document.addEventListener('DOMContentLoaded', function() {
+            // Event listener dla przycisku akcji (delegowanie)
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.id === 'actionBtn') {
+                    handleActionButtonClick();
+                }
+            });
+
+            // Event listener dla przycisku play (delegowanie)
+            document.addEventListener('click', function(e) {
+                if (e.target && (e.target.id === 'playBtn' || e.target.closest('#playBtn'))) {
+                    if (gameInstance) {
+                        gameInstance.playCurrentFragment();
+                    }
+                }
+            });
+
+            // Event listener dla inputa wyszukiwania
+            const searchInput = document.getElementById('songSearchInput');
+            if (searchInput) {
+                // Usuń stare event listenery przez klonowanie elementu
+                searchInput.replaceWith(searchInput.cloneNode(true));
+                const newSearchInput = document.getElementById('songSearchInput');
+                
+                newSearchInput.addEventListener('input', function() {
+                    const searchText = newSearchInput.value.trim();
+                    if (searchText.length > 0 && gameInstance) {
+                        gameInstance.showSuggestions(searchText);
+                    } else {
+                        document.getElementById('songSuggestions').style.display = 'none';
+                    }
+                    updateActionButton();
+                });
+
+                newSearchInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        submitGuess();
+                    }
+                });
+
+                newSearchInput.addEventListener('focus', function() {
+                    const searchText = newSearchInput.value.trim();
+                    if (searchText.length > 0 && gameInstance) {
+                        gameInstance.showSuggestions(searchText);
+                    }
+                });
+
+                newSearchInput.addEventListener('blur', function() {
+                    setTimeout(() => {
+                        document.getElementById('songSuggestions').style.display = 'none';
+                    }, 200);
+                });
+            }
+
+            // Event listener dla zakładek rankingu
+            document.querySelectorAll('.ranking-tab').forEach(tab=>{
+                tab.addEventListener('click',function(){
+                    const period=this.getAttribute('data-tab')
+                    loadRanking(period)
+                })
+            });
+
+            // Event listener dla zakładek auth
+            document.querySelectorAll('.auth-tab').forEach(e=>{
+                e.addEventListener('click',()=>{
+                    e.getAttribute('data-tab')==='login'?showLogin():showRegister()
+                })
+            });
+
+            // Event listener dla logowania po Enter
+            document.getElementById('loginUsernameOrEmail').addEventListener('keypress',e=>{e.key==='Enter'&&login()})
+            document.getElementById('loginPassword').addEventListener('keypress',e=>{e.key==='Enter'&&login()})
+            document.getElementById('registerPassword').addEventListener('keypress',e=>{e.key==='Enter'&&register()})
+        });
+
+        // SYSTEM ŚLEDZENIA CZASU GRY - AKTUALIZACJA CO SEKUNDĘ
+        function startPlayTimeTracking() {
+            if (playTimeInterval) {
+                clearInterval(playTimeInterval);
+            }
+            
+            gameStartTime = Date.now();
+            
+            // Aktualizuj czas co sekundę
+            playTimeInterval = setInterval(() => {
+                if (currentUser && gameStartTime) {
+                    const currentTime = Date.now();
+                    const timePlayed = currentTime - gameStartTime;
+                    
+                    // Aktualizuj czas gry użytkownika
+                    currentUser.playTime = (currentUser.playTime || 0) + timePlayed;
+                    
+                    // Zapisz zmiany
+                    const userIndex = users.findIndex(u => u.id === currentUser.id);
+                    if (userIndex !== -1) {
+                        users[userIndex] = currentUser;
+                        localStorage.setItem('users', JSON.stringify(users));
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    }
+                    
+                    gameStartTime = currentTime;
+                    
+                    // Aktualizuj wyświetlany czas w statystykach jeśli popup jest otwarty
+                    updateStatsDisplay();
+                }
+            }, 1000); // AKTUALIZUJ CO 1 SEKUNDĘ
+        }
+
+        function stopPlayTimeTracking() {
+            if (playTimeInterval) {
+                clearInterval(playTimeInterval);
+                playTimeInterval = null;
+            }
+            
+            if (currentUser && gameStartTime) {
+                const timePlayed = Date.now() - gameStartTime;
+                currentUser.playTime = (currentUser.playTime || 0) + timePlayed;
+                
+                // Zapisz zmiany
+                const userIndex = users.findIndex(u => u.id === currentUser.id);
+                if (userIndex !== -1) {
+                    users[userIndex] = currentUser;
+                    localStorage.setItem('users', JSON.stringify(users));
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+                
+                gameStartTime = null;
+            }
+        }
+
+        function formatPlayTime(milliseconds) {
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Funkcja do aktualizacji wyświetlanych statystyk
+        function updateStatsDisplay() {
+            if (!currentUser) return;
+            
+            const playTime = currentUser.playTime || 0;
+            document.getElementById('statPlayTime').textContent = formatPlayTime(playTime);
+        }
 
         if(currentUser)showGame()
 
@@ -316,10 +472,10 @@
         }
 
         // SYSTEM RANKINGOWY
-        function updateRankings(score, hasPerfectGame=false){
-            if(!currentUser) return
+        function updateRankings(score, attempts, hasPerfectGame=false){
+            if(!currentUser)return
             
-            // Aktualizuj statystyki użytkownika - uwzględnij wszystkie wyniki (dodatnie i ujemne)
+            // Aktualizuj statystyki użytkownika
             currentUser.gamesPlayed=(currentUser.gamesPlayed||0)+1
             currentUser.totalScore=(currentUser.totalScore||0)+score
             currentUser.bestScore=Math.max(currentUser.bestScore||0,score)
@@ -335,11 +491,12 @@
             const gameData={
                 username:currentUser.username,
                 score:score,
+                attempts:attempts,
                 date:new Date().toISOString(),
                 hasPerfectGame:hasPerfectGame
             }
             
-            // Aktualizuj rankingi - uwzględnij wszystkie wyniki
+            // Aktualizuj wszystkie rankingi
             updateRankingPeriod('daily',gameData)
             updateRankingPeriod('weekly',gameData)
             updateRankingPeriod('monthly',gameData)
@@ -356,8 +513,10 @@
             )
             
             if(existingIndex>=0){
-                // Aktualizuj wynik - suma wszystkich gier
-                rankings[period][existingIndex].score += gameData.score
+                // Aktualizuj jeśli nowy wynik jest lepszy
+                if(gameData.score>rankings[period][existingIndex].score){
+                    rankings[period][existingIndex]=gameData
+                }
             }else{
                 rankings[period].push(gameData)
             }
@@ -369,60 +528,44 @@
             rankings[period]=rankings[period].slice(0,10)
         }
 
-        // SYSTEM PODPOWIEDZI
-        let currentHintSong = null;
-
+        // SYSTEM PODPOWIEDZI - POPRAWIONY
         function showHintPopup(){
             showPopup('hintPopup')
         }
 
         function acceptHint(){
             hidePopup('hintPopup')
-            showHint()
+            if (gameInstance) {
+                gameInstance.showHint();
+            }
         }
 
         function declineHint(){
             hidePopup('hintPopup')
         }
 
-        function showHint(){
-            if(!gameInstance||!gameInstance.currentSong)return
-            
-            // Ustaw aktualną piosenkę dla podpowiedzi
-            currentHintSong = gameInstance.currentSong.title;
-            
-            const hintText=createHintText(currentHintSong)
-            
-            document.getElementById('hintText').textContent=hintText
-            document.getElementById('hintContainer').classList.add('show')
-        }
-
-        function createHintText(title){
-            // Zamień co drugą literę na podkreślenie, zachowując spacje
-            return title.split('').map((char,index)=>{
-                if(char===' ')return '  ' // Podwójna spacja dla odstępów między słowami
-                return index%2===0?char:'_'
-            }).join(' ')
-        }
-
         function hideHint(){
             document.getElementById('hintContainer').classList.remove('show')
-            currentHintSong = null;
         }
 
-        // SYSTEM STATYSTYK
+        // SYSTEM STATYSTYK - UPROSZCZONY
         function showStats(){
             if(!currentUser)return
             
             document.getElementById('statGamesPlayed').textContent=currentUser.gamesPlayed||0
             document.getElementById('statBestScore').textContent=currentUser.bestScore||0
-            
-            // POPRAWIONE LICZENIE ŚREDNIEJ - uwzględnia wszystkie gry
-            const avgScore = currentUser.gamesPlayed > 0 ? 
-                Math.round(currentUser.totalScore / currentUser.gamesPlayed) : 0
-            document.getElementById('statAvgScore').textContent=avgScore
-            
+            document.getElementById('statAvgScore').textContent=currentUser.totalScore&&currentUser.gamesPlayed?
+                Math.round(currentUser.totalScore/currentUser.gamesPlayed):0
             document.getElementById('statPerfectGames').textContent=currentUser.perfectGames||0
+            
+            // Aktualizuj czas gry
+            updateStatsDisplay();
+            
+            // Uruchom aktualizację czasu w czasie rzeczywistym gdy statystyki są otwarte
+            if (statsUpdateInterval) {
+                clearInterval(statsUpdateInterval);
+            }
+            statsUpdateInterval = setInterval(updateStatsDisplay, 1000);
             
             showPopup('statsPopup')
             hideMenuDropdown()
@@ -431,7 +574,18 @@
 
         // POZOSTAŁE FUNKCJE
         function showPopup(e){const t=document.getElementById(e);t.classList.add('show'),setTimeout(()=>{t.querySelector('.popup').classList.add('show')},10)}
-        function hidePopup(e){const t=document.getElementById(e),o=t.querySelector('.popup');o.classList.remove('show'),setTimeout(()=>{t.classList.remove('show')},300)}
+        function hidePopup(e){
+            const t=document.getElementById(e),o=t.querySelector('.popup');
+            o.classList.remove('show'),
+            setTimeout(()=>{
+                t.classList.remove('show');
+                // Zatrzymaj aktualizację statystyk gdy popup jest zamykany
+                if (statsUpdateInterval) {
+                    clearInterval(statsUpdateInterval);
+                    statsUpdateInterval = null;
+                }
+            },300)
+        }
         function showRegistrationSuccess(){showPopup('registrationPopup')}
         function showGameSuccess(e){document.getElementById('successMessageText').textContent=e,showPopup('successPopup')}
         function showGameFailure(e){document.getElementById('failureMessageText').textContent=e,showPopup('failurePopup')}
@@ -443,82 +597,99 @@
         function showError(e){const t=document.getElementById('errorMessage');t.textContent=e,t.classList.add('show'),document.getElementById('successMessage').classList.remove('show')}
         function showSuccess(e){const t=document.getElementById('successMessage');t.textContent=e,t.classList.add('show'),document.getElementById('errorMessage').classList.remove('show')}
         function validateEmail(e){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)}
-        function register(){const e=document.getElementById('registerUsername').value.trim(),t=document.getElementById('registerEmail').value.trim(),o=document.getElementById('registerPassword').value.trim()
-        if(!e||!t||!o)return showError('Wszystkie pola są wymagane!')
-        if(!validateEmail(t))return showError('Proszę podać prawidłowy adres email!')
-        if(users.find(n=>n.username.toLowerCase()===e.toLowerCase()))return showError('Nazwa użytkownika jest już zajęta!')
-        if(users.find(n=>n.email.toLowerCase()===t.toLowerCase()))return showError('Użytkownik z tym emailem już istnieje!')
-        if(o.length<6)return showError('Hasło musi mieć co najmniej 6 znaków!')
-        const n={id:Date.now(),username:e,email:t,password:o,createdAt:new Date().toISOString(),gamesPlayed:0,bestScore:0,totalScore:0,perfectGames:0}
-        users.push(n),localStorage.setItem('users',JSON.stringify(users)),showRegistrationSuccess(),document.getElementById('registerUsername').value='',document.getElementById('registerEmail').value='',document.getElementById('registerPassword').value='',setTimeout(()=>{showLogin()},2000)}
-        function login(){const e=document.getElementById('loginEmail').value.trim(),t=document.getElementById('loginPassword').value.trim()
-        if(!e||!t)return showError('Wpisz email i hasło!')
-        if(!validateEmail(e))return showError('Proszę podać prawidłowy adres email!')
-        const o=users.find(n=>n.email.toLowerCase()===e.toLowerCase()&&n.password===t)
-        if(!o)return showError('Nieprawidłowy email lub hasło!')
-        currentUser=o,localStorage.setItem('currentUser',JSON.stringify(currentUser)),showGame()}
-        function logout(){currentUser=null,localStorage.removeItem('currentUser'),showAuth(),hideUserDropdown()}
+        
+        // POPRAWIONA FUNKCJA REJESTRACJI
+        function register(){
+            const e=document.getElementById('registerUsername').value.trim(),
+                  t=document.getElementById('registerEmail').value.trim(),
+                  o=document.getElementById('registerPassword').value.trim()
+            
+            if(!e||!t||!o)return showError('Wszystkie pola są wymagane!')
+            if(!validateEmail(t))return showError('Proszę podać prawidłowy adres email!')
+            if(users.find(n=>n.username.toLowerCase()===e.toLowerCase()))return showError('Nazwa użytkownika jest już zajęta!')
+            if(users.find(n=>n.email.toLowerCase()===t.toLowerCase()))return showError('Użytkownik z tym emailem już istnieje!')
+            if(o.length<6)return showError('Hasło musi mieć co najmniej 6 znaków!')
+            
+            const n={
+                id:Date.now(),
+                username:e,
+                email:t,
+                password:o,
+                createdAt:new Date().toISOString(),
+                gamesPlayed:0,
+                bestScore:0,
+                totalScore:0,
+                perfectGames:0,
+                playTime:0 // Dodany czas gry
+            }
+            users.push(n),localStorage.setItem('users',JSON.stringify(users)),showRegistrationSuccess(),document.getElementById('registerUsername').value='',document.getElementById('registerEmail').value='',document.getElementById('registerPassword').value='',setTimeout(()=>{showLogin()},2000)
+        }
+        
+        // POPRAWIONA FUNKCJA LOGOWANIA - po nazwie użytkownika lub emailu
+        function login(){
+            const e=document.getElementById('loginUsernameOrEmail').value.trim(),
+                  t=document.getElementById('loginPassword').value.trim()
+            
+            if(!e||!t)return showError('Wpisz nazwę użytkownika/email i hasło!')
+            
+            // Szukaj użytkownika po nazwie użytkownika LUB emailu
+            const o=users.find(n=>
+                (n.username.toLowerCase()===e.toLowerCase() || n.email.toLowerCase()===e.toLowerCase()) && 
+                n.password===t
+            )
+            
+            if(!o)return showError('Nieprawidłowa nazwa użytkownika/email lub hasło!')
+            currentUser=o,localStorage.setItem('currentUser',JSON.stringify(currentUser)),showGame()
+        }
+        
+        function logout(){
+            stopPlayTimeTracking();
+            currentUser=null,localStorage.removeItem('currentUser'),showAuth(),hideUserDropdown()
+        }
         function toggleUserDropdown(){document.getElementById('userDropdown').classList.toggle('show')}
         function hideUserDropdown(){document.getElementById('userDropdown').classList.remove('show')}
         function toggleMenuDropdown(){document.getElementById('menuDropdown').classList.toggle('show')}
         function hideMenuDropdown(){document.getElementById('menuDropdown').classList.remove('show')}
-        function showGame(){document.getElementById('authContainer').style.display='none',document.getElementById('gameContainer').style.display='block',document.getElementById('userMenu').style.display='block',document.getElementById('sideMenu').style.display='block',document.getElementById('userDisplayName').textContent=currentUser.username,initGame()}
-        function showAuth(){document.getElementById('authContainer').style.display='block',document.getElementById('gameContainer').style.display='none',document.getElementById('userMenu').style.display='none',document.getElementById('sideMenu').style.display='none',hideMessages(),showLogin(),document.getElementById('loginEmail').value='',document.getElementById('loginPassword').value='',document.getElementById('registerUsername').value='',document.getElementById('registerEmail').value='',document.getElementById('registerPassword').value=''}
+        function showGame(){
+            document.getElementById('authContainer').style.display='none',
+            document.getElementById('gameContainer').style.display='block',
+            document.getElementById('userMenu').style.display='block',
+            document.getElementById('sideMenu').style.display='block',
+            document.getElementById('userDisplayName').textContent=currentUser.username,
+            initGame();
+            startPlayTimeTracking(); // Rozpocznij śledzenie czasu gry
+        }
+        function showAuth(){
+            stopPlayTimeTracking(); // Zatrzymaj śledzenie czasu gry
+            document.getElementById('authContainer').style.display='block',
+            document.getElementById('gameContainer').style.display='none',
+            document.getElementById('userMenu').style.display='none',
+            document.getElementById('sideMenu').style.display='none',
+            hideMessages(),showLogin(),
+            document.getElementById('loginUsernameOrEmail').value='',
+            document.getElementById('loginPassword').value='',
+            document.getElementById('registerUsername').value='',
+            document.getElementById('registerEmail').value='',
+            document.getElementById('registerPassword').value=''
+        }
         function startNewGame(){hidePopup('successPopup'),hidePopup('failurePopup'),hideHint(),gameInstance&&gameInstance.loadRandomSong()}
         
-        function updateActionButton(){
-            const e=document.getElementById('songSearchInput')
-            const t=document.getElementById('actionBtn')
-            if(e.value.trim()!==''){
-                t.textContent='Try!'
-                t.classList.add('submit')
-            }else{
-                t.textContent='Skip'
-                t.classList.remove('submit')
-            }
-        }
+        function updateActionButton(){const e=document.getElementById('songSearchInput'),t=document.getElementById('actionBtn');e.value.trim()!==''?(t.textContent='Try!',t.classList.add('submit')):(t.textContent='Skip',t.classList.remove('submit'))}
 
-        function submitGuess(){
-            const e=document.getElementById('songSearchInput')
-            const t=e.value.trim()
-            if(t){
-                gameInstance.checkGuess(t)
-                e.value=''
-                document.getElementById('songSuggestions').style.display='none'
-                updateActionButton()
-            }
-        }
+        function submitGuess(){const e=document.getElementById('songSearchInput'),t=e.value.trim();t&&gameInstance&&gameInstance.checkGuess(t),e.value='',document.getElementById('songSuggestions').style.display='none',updateActionButton()}
 
-        function skipToNext(){
-            gameInstance.skipToNext()
-            updateActionButton()
+        function skipToNext(){gameInstance&&gameInstance.skipToNext(),updateActionButton()}
+
+        function handleActionButtonClick() {
+            const input = document.getElementById('songSearchInput');
+            if (input.value.trim() !== '') {
+                submitGuess();
+            } else {
+                skipToNext();
+            }
         }
 
         document.addEventListener('click',e=>{const t=document.getElementById('userMenu'),o=document.getElementById('sideMenu');t&&!t.contains(e.target)&&hideUserDropdown(),o&&!o.contains(e.target)&&hideMenuDropdown()})
-        
-        // DODAJ EVENT LISTENER DO INPUTA DLA AKTUALIZACJI PRZYCISKU
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('songSearchInput')
-            if (searchInput) {
-                searchInput.addEventListener('input', updateActionButton)
-            }
-            
-            document.querySelectorAll('.auth-tab').forEach(e=>{
-                e.addEventListener('click',()=>{
-                    e.getAttribute('data-tab')==='login'?showLogin():showRegister()
-                })
-            })
-            
-            document.querySelectorAll('.ranking-tab').forEach(tab=>{
-                tab.addEventListener('click',function(){
-                    const period=this.getAttribute('data-tab')
-                    loadRanking(period)
-                })
-            })
-        })
-
-        document.getElementById('loginPassword').addEventListener('keypress',e=>{e.key==='Enter'&&login()})
-        document.getElementById('registerPassword').addEventListener('keypress',e=>{e.key==='Enter'&&register()})
 
         function loadRanking(period){
             const rankingList=document.getElementById('rankingList')
@@ -553,6 +724,7 @@
                                 <div class="ranking-username">${entry.username}</div>
                                 <div class="ranking-stats">
                                     <span class="ranking-score">${entry.score} pkt</span>
+                                    <span>Próby: ${entry.attempts}/5</span>
                                     ${entry.hasPerfectGame?'<span>⭐ Perfect</span>':''}
                                 </div>
                             </div>
@@ -565,7 +737,7 @@
         }
 
         function initGame(){
-            const e=document.getElementById('songSearchInput'),t=document.getElementById('playBtn'),o=document.getElementById('songSuggestions'),n=document.querySelectorAll('.progress-time'),a=document.querySelectorAll('.guess-tile'),r=document.getElementById('actionBtn')
+            const n=document.querySelectorAll('.progress-time'),a=document.querySelectorAll('.guess-tile')
             let l=0,s=0,c=null,i=null,d=[0.2,0.5,3,5,15]
             
             const u=[
@@ -592,7 +764,7 @@
                 h()
                 g()
                 document.getElementById('songSearchInput').focus()
-                updateActionButton() // AKTUALIZUJ PRZYCISK PRZY NOWEJ GRZE
+                updateActionButton()
                 hideHint() // UKRYWANIE PODPOWIEDZI PRZY NOWEJ GRZE
                 
                 if(c.audio){
@@ -648,6 +820,7 @@
                     song.title.toLowerCase().includes(searchText.toLowerCase())||
                     song.artist.toLowerCase().includes(searchText.toLowerCase())
                 )
+                const o=document.getElementById('songSuggestions')
                 o.innerHTML=''
                 
                 if(filteredSongs.length===0){
@@ -669,6 +842,25 @@
                     o.appendChild(item)
                 })
                 o.style.display='block'
+            }
+
+            // NOWA FUNKCJA DO TWORZENIA PODPOWIEDZI
+            function createHintText(title){
+                // Zamień co drugą literę na podkreślenie, zachowując spacje
+                return title.split('').map((char,index)=>{
+                    if(char===' ')return '  ' // Podwójna spacja dla odstępów między słowami
+                    return index%2===0?char:'_'
+                }).join(' ')
+            }
+
+            // NOWA FUNKCJA DO POKAZYWANIA PODPOWIEDZI
+            function showHint(){
+                if(!c)return
+                
+                const hintText=createHintText(c.title)
+                
+                document.getElementById('hintText').textContent=hintText
+                document.getElementById('hintContainer').classList.add('show')
             }
 
             // NOWY SYSTEM PUNKTACJI
@@ -702,18 +894,24 @@
                     const score=calculateScore(s)
                     const hasPerfectGame=(s===0) // Perfect game jeśli zgadnięte za 1 razem
                     
-                    updateRankings(score, hasPerfectGame)
+                    updateRankings(score,s+1,hasPerfectGame)
                     
                     showGameSuccess(`Zgadłeś za ${s+1} razem! Zdobywasz ${score} punktów!`)
                     updateActionButton()
                     return true
                 }else{
-                    // POKAŻ WPISANY TYTUŁ W KAFELKU (nawet jeśli błędny)
                     tile.className='guess-tile incorrect'
-                    tile.innerHTML=`
-                        <div class="song-title">${guess}</div>
-                        <div class="song-artist">${foundSong ? foundSong.artist : '-'}</div>
-                    `
+                    if(foundSong){
+                        tile.innerHTML=`
+                            <div class="song-title">${foundSong.title}</div>
+                            <div class="song-artist">${foundSong.artist}</div>
+                        `
+                    }else{
+                        tile.innerHTML=`
+                            <div class="song-title">${guess}</div>
+                            <div class="song-artist">-</div>
+                        `
+                    }
                     s++
                     
                     // Pokaz podpowiedź po 4 próbach - BEZ OPOŹNIENIA
@@ -728,7 +926,7 @@
                     if(s>=5){
                         // Kara za niezgadnięcie
                         const penaltyScore=calculateScore(4)
-                        updateRankings(penaltyScore, false)
+                        updateRankings(penaltyScore,5,false)
                         showGameFailure(`To była piosenka: "${c.title}" - ${c.artist}. Straciłeś ${Math.abs(penaltyScore)} punktów.`)
                     }
                     updateActionButton()
@@ -739,7 +937,6 @@
             function b(){
                 if(s<5){
                     const tile=a[s]
-                    // POKAŻ "SKIPPED" W KAFELKU
                     tile.className='guess-tile skipped'
                     tile.innerHTML=`
                         <div class="song-title">SKIPPED</div>
@@ -759,7 +956,7 @@
                     if(s>=5){
                         // Kara za skip na ostatniej próbie
                         const penaltyScore=calculateScore(4)
-                        updateRankings(penaltyScore, false)
+                        updateRankings(penaltyScore,5,false)
                         showGameFailure(`To była piosenka: "${c.title}" - ${c.artist}. Straciłeś ${Math.abs(penaltyScore)} punktów.`)
                     }
                 }
@@ -768,39 +965,23 @@
                 updateActionButton()
             }
             
-            t.addEventListener('click',f)
-            r.addEventListener('click',()=>{
-                if(e.value.trim()!=='')submitGuess()
-                else skipToNext()
-            })
-            e.addEventListener('keypress',event=>{
-                if(event.key==='Enter')submitGuess()
-            })
-            e.addEventListener('input',()=>{
-                const searchText=e.value.trim()
-                if(searchText.length>0)v(searchText)
-                else o.style.display='none'
-                updateActionButton()
-            })
-            e.addEventListener('focus',()=>{
-                const searchText=e.value.trim()
-                if(searchText.length>0)v(searchText)
-            })
-            e.addEventListener('blur',()=>{
-                setTimeout(()=>{
-                    o.style.display='none'
-                },200)
-            })
-            
             m()
             p()
             gameInstance={
                 loadRandomSong:p,
                 checkGuess:y,
                 skipToNext:b,
+                playCurrentFragment:f,
+                showSuggestions:v,
+                showHint:showHint, // DODANA FUNKCJA
                 currentSong:c
             }
         }
+
+        // Zapis czasu gry przed zamknięciem strony
+        window.addEventListener('beforeunload', function() {
+            stopPlayTimeTracking();
+        });
     </script>
 </body>
 </html>
