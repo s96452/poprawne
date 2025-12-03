@@ -7,21 +7,9 @@
     <style>
         /* STYLE BAZOWE */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
-        body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;position:relative;padding-bottom: 60px; overflow-x: hidden;}
-        
-        /* MATRIX CANVAS */
-        #matrixCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0; /* Za treścią */
-            opacity: 0.15; /* Subtelny efekt */
-            pointer-events: none;
-        }
-
-        .container{max-width:400px;width:100%;margin:0 auto; position: relative; z-index: 1;}
+        /* Przywrócone oryginalne tło gradientowe */
+        body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;position:relative;padding-bottom: 60px;}
+        .container{max-width:400px;width:100%;margin:0 auto}
         header{text-align:center;margin-bottom:40px;width:100%}
         h1{font-size:42px;font-weight:800;margin-bottom:10px;background:linear-gradient(45deg,#fff,#a8dadc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2}
         .project-info{text-align:center;font-size:14px;color:#8d99ae;margin-bottom:20px;font-style:italic}
@@ -188,8 +176,6 @@
     </style>
 </head>
 <body>
-    <canvas id="matrixCanvas"></canvas>
-
     <div class="side-menu" id="sideMenu" style="display:none">
         <div class="menu-icon" onclick="toggleMenuDropdown()"><div class="menu-bar"></div><div class="menu-bar"></div><div class="menu-bar"></div></div>
         <div class="menu-dropdown" id="menuDropdown">
@@ -408,7 +394,6 @@
         // GLOBALNE EVENT LISTENERY
         document.addEventListener('DOMContentLoaded', function() {
             DeezerService.initializePlaylist();
-            initMatrixEffect(); // Start Matrix Effect
 
             document.addEventListener('click', function(e) { if (e.target && e.target.id === 'actionBtn') handleActionButtonClick(); });
             document.addEventListener('click', function(e) { if (e.target && (e.target.id === 'playBtn' || e.target.closest('#playBtn'))) { if (gameInstance) gameInstance.playCurrentFragment(); } });
@@ -436,41 +421,6 @@
 
             if (currentUser) showGame();
         });
-
-        // MATRIX EFFECT FUNCTION
-        function initMatrixEffect() {
-            const canvas = document.getElementById('matrixCanvas');
-            const ctx = canvas.getContext('2d');
-
-            let width = canvas.width = window.innerWidth;
-            let height = canvas.height = window.innerHeight;
-
-            const cols = Math.floor(width / 20);
-            const ypos = Array(cols).fill(0);
-
-            window.addEventListener('resize', () => {
-                width = canvas.width = window.innerWidth;
-                height = canvas.height = window.innerHeight;
-            });
-
-            function matrix() {
-                ctx.fillStyle = '#0001'; // Smear effect
-                ctx.fillRect(0, 0, width, height);
-
-                ctx.fillStyle = '#0f0'; // Matrix green (or cyan: #0ff)
-                ctx.fillStyle = '#4cc9f0'; // Using the theme cyan color
-                ctx.font = '15px monospace';
-
-                ypos.forEach((y, ind) => {
-                    const text = String.fromCharCode(Math.random() * 128);
-                    const x = ind * 20;
-                    ctx.fillText(text, x, y);
-                    if (y > 100 + Math.random() * 10000) ypos[ind] = 0;
-                    else ypos[ind] = y + 20;
-                });
-            }
-            setInterval(matrix, 50);
-        }
 
         // SYSTEM ŚLEDZENIA CZASU GRY
         function startPlayTimeTracking() {
