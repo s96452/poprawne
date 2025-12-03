@@ -161,6 +161,25 @@
         .loader-center { margin: 20px auto; display: block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* STREAK COUNTER */
+        .streak-counter {
+            position: absolute;
+            top: -25px;
+            right: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffbe0b;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: none;
+            animation: bounceIn 0.5s;
+        }
+        .streak-counter.show { display: block; }
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
         /* LEGAL FOOTER - DEEZER */
         .legal-footer {
             position: absolute;
@@ -228,6 +247,7 @@
         
         <div class="controls-section">
             <div class="search-section">
+                <div class="streak-counter" id="streakCounter">🔥 Seria: 0</div>
                 <input type="text" class="search-input" placeholder="Wpisz tytuł piosenki..." id="songSearchInput">
                 <button class="action-btn" id="actionBtn">Skip</button>
                 <div class="suggestions" id="songSuggestions"></div>
@@ -268,7 +288,7 @@
     <div class="popup-overlay" id="rankingPopup">
         <div class="popup success" style="max-width:500px">
             <div class="popup-icon">🏆</div>
-            <div class="popup-title">Globalny Ranking</div>
+            <div class="popup-title">Globalny Ranking (Suma Punktów)</div>
             <div class="ranking-tabs">
                 <div class="ranking-tab active" data-tab="daily">Dzienne</div>
                 <div class="ranking-tab" data-tab="weekly">Tygodniowe</div>
@@ -314,7 +334,7 @@
     <div class="popup-overlay" id="registrationPopup"><div class="popup success"><div class="popup-icon">✓</div><div class="popup-title">Rejestracja udana!</div><div class="popup-message">Twoje konto zostało utworzone pomyślnie. Możesz się teraz zalogować.</div><button class="popup-btn" onclick="hidePopup('registrationPopup')">OK</button></div></div>
     <div class="popup-overlay" id="successPopup"><div class="popup success"><div class="popup-icon">🎯</div><div class="popup-title">Gratulacje!</div><div class="popup-message" id="successMessageText"></div><button class="popup-btn" onclick="startNewGame()">Nowa gra</button></div></div>
     <div class="popup-overlay" id="failurePopup"><div class="popup error"><div class="popup-icon">✗</div><div class="popup-title">Koniec gry</div><div class="popup-message" id="failureMessageText"></div><button class="popup-btn" onclick="startNewGame()">Nowa gra</button></div></div>
-    <div class="popup-overlay" id="rulesPopup"><div class="popup success"><div class="popup-icon">📝</div><div class="popup-title">Zasady gry</div><div class="popup-message" style="text-align:left;line-height:1.6"><p><strong>Cel gry:</strong> Odgadnij tytuł piosenki na podstawie fragmentu melodii.</p><p><strong>Zasady:</strong></p><ul style="margin-left:20px;margin-bottom:15px"><li>Masz 5 prób na odgadnięcie piosenki</li><li>Czasy fragmentów: 0.2s, 0.5s, 3s, 5s, 15s</li><li><strong>Punkty się sumują!</strong> Graj więcej, by awansować w globalnym rankingu.</li><li>Podpowiedź zeruje punkty w rundzie!</li></ul><p><strong>Powodzenia!</strong></p></div><button class="popup-btn" onclick="hidePopup('rulesPopup')">Rozumiem</button></div></div>
+    <div class="popup-overlay" id="rulesPopup"><div class="popup success"><div class="popup-icon">📝</div><div class="popup-title">Zasady gry</div><div class="popup-message" style="text-align:left;line-height:1.6"><p><strong>Cel gry:</strong> Odgadnij tytuł piosenki na podstawie fragmentu melodii.</p><p><strong>Zasady:</strong></p><ul style="margin-left:20px;margin-bottom:15px"><li>Masz 5 prób na odgadnięcie piosenki.</li><li>Czasy fragmentów: 0.2s, 0.5s, 3s, 5s, 15s.</li><li><strong>Ranking:</strong> Punkty z każdej gry się sumują! Im więcej grasz, tym wyższą masz pozycję.</li><li><strong>Seria (Streak):</strong> Zgadywanie bez błędów zwiększa mnożnik punktów!</li><li><strong>Podpowiedź:</strong> Możesz jej użyć po 4. próbie, ale wtedy otrzymasz <strong>0 punktów</strong> za tę rundę.</li></ul><p><strong>Powodzenia!</strong></p></div><button class="popup-btn" onclick="hidePopup('rulesPopup')">Rozumiem</button></div></div>
     <div class="popup-overlay" id="loadingPopup"><div class="popup success" style="border-color: #a8dadc"><div class="loader" style="width: 40px; height: 40px; margin: 0 auto 20px auto; display: block;"></div><div class="popup-title" style="color: #a8dadc">Pobieranie utworu...</div></div></div>
 
     <script>
@@ -333,14 +353,14 @@
             // appId: "ID_APLIKACJI"
         };
 
-        // Inicjalizacja (bezpieczna - nie wywali błędu jeśli config jest pusty, ale ranking nie zadziała)
+        // Inicjalizacja (bezpieczna)
         let db;
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
             console.log("Firebase initialized");
         } catch (e) {
-            console.error("Błąd konfiguracji Firebase - Ranking globalny nie będzie działać", e);
+            console.error("Błąd konfiguracji Firebase - Ranking globalny nie będzie działać (Uzupełnij firebaseConfig)", e);
         }
 
         // ==========================================
@@ -349,20 +369,17 @@
         const CORS_PROXY = 'https://corsproxy.io/?'; 
         const DEEZER_API_URL = 'https://api.deezer.com';
         
-        // Playlist ID for "100% Hits" (usually very English focused)
-        // ID: 3155776842
+        // Playlist ID for "100% Hits" 
         const ENGLISH_PLAYLIST_ID = '3155776842'; 
 
         // DEEZER SERVICE
         const DeezerService = {
-            // Cache for the playlist to avoid fetching it every single time
             playlistCache: [],
 
             async initializePlaylist() {
                 if (this.playlistCache.length > 0) return;
                 
                 try {
-                    // Fetch tracks from specific playlist
                     const playlistUrl = `${CORS_PROXY}${encodeURIComponent(DEEZER_API_URL + '/playlist/' + ENGLISH_PLAYLIST_ID + '/tracks?limit=100')}`;
                     const response = await fetch(playlistUrl);
                     if (!response.ok) throw new Error('Network response was not ok');
@@ -370,9 +387,8 @@
                     const data = await response.json();
                     if (!data.data || data.data.length === 0) throw new Error('No tracks found');
 
-                    // Filter and map
                     this.playlistCache = data.data
-                        .filter(track => track.preview) // Ensure preview exists
+                        .filter(track => track.preview) 
                         .map(track => ({
                             id: track.id,
                             title: track.title,
@@ -384,18 +400,14 @@
                     console.log(`Załadowano ${this.playlistCache.length} utworów do bazy.`);
                 } catch (error) {
                     console.error('Deezer Playlist Error:', error);
-                    // Fallback to empty, will be handled in loadNewSong
                 }
             },
 
             async getRandomTrack() {
-                // Ensure playlist is loaded
                 if (this.playlistCache.length === 0) {
                     await this.initializePlaylist();
                 }
-
                 if (this.playlistCache.length === 0) return null;
-
                 const randomIndex = Math.floor(Math.random() * this.playlistCache.length);
                 return this.playlistCache[randomIndex];
             },
@@ -414,19 +426,16 @@
             }
         };
 
-        // POZOSTAŁE ZMIENNE
+        // ZMIENNE
         let users = JSON.parse(localStorage.getItem('users')) || [];
         let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
         let gameInstance = null;
-        // Ranking lokalny zostawiamy jako fallback, ale używamy głównie Firebase
-        let rankings = { daily: [], weekly: [], monthly: [] };
         let gameStartTime = null;
         let playTimeInterval = null;
         let statsUpdateInterval = null;
 
-        // GLOBALNE EVENT LISTENERY
+        // EVENTS
         document.addEventListener('DOMContentLoaded', function() {
-            // Pre-load playlist
             DeezerService.initializePlaylist();
 
             document.addEventListener('click', function(e) {
@@ -448,9 +457,7 @@
                 let debounceTimer;
                 searchInput.addEventListener('input', function() {
                     const searchText = searchInput.value.trim();
-                    
                     if(gameInstance) gameInstance.clearPendingTrack();
-
                     clearTimeout(debounceTimer);
                     debounceTimer = setTimeout(() => {
                         if (searchText.length > 0 && gameInstance) {
@@ -459,7 +466,6 @@
                             document.getElementById('songSuggestions').style.display = 'none';
                         }
                     }, 200); 
-                    
                     updateActionButton();
                 });
 
@@ -492,11 +498,9 @@
             }
         });
 
-        // SYSTEM ŚLEDZENIA CZASU GRY
+        // TIME TRACKING
         function startPlayTimeTracking() {
-            if (playTimeInterval) {
-                clearInterval(playTimeInterval);
-            }
+            if (playTimeInterval) clearInterval(playTimeInterval);
             gameStartTime = Date.now();
             playTimeInterval = setInterval(() => {
                 if (currentUser && gameStartTime) {
@@ -516,10 +520,7 @@
         }
 
         function stopPlayTimeTracking() {
-            if (playTimeInterval) {
-                clearInterval(playTimeInterval);
-                playTimeInterval = null;
-            }
+            if (playTimeInterval) { clearInterval(playTimeInterval); playTimeInterval = null; }
             if (currentUser && gameStartTime) {
                 const timePlayed = Date.now() - gameStartTime;
                 currentUser.playTime = (currentUser.playTime || 0) + timePlayed;
@@ -548,13 +549,13 @@
         }
 
         // ==========================================
-        // RANKINGI (FIREBASE INTEGRATION)
+        // RANKINGI (FIREBASE)
         // ==========================================
 
         function updateRankings(score, attempts, hasPerfectGame=false){
             if(!currentUser) return
             
-            // 1. Zapisz statystyki lokalne użytkownika
+            // 1. Lokalne statystyki
             currentUser.gamesPlayed=(currentUser.gamesPlayed||0)+1
             currentUser.totalScore=(currentUser.totalScore||0)+score
             currentUser.bestScore=Math.max(currentUser.bestScore||0,score)
@@ -566,16 +567,14 @@
                 localStorage.setItem('users',JSON.stringify(users))
             }
             
-            // 2. Wyślij wynik do Firebase (Global Ranking)
+            // 2. Globalny Ranking (Firebase)
             if(db) {
                 const periods = ['daily', 'weekly', 'monthly'];
-                
-                // Dla uproszczenia, używamy nazwy użytkownika jako klucza (bez kropek)
+                // Uproszczona nazwa użytkownika jako klucz
                 const sanitizedUsername = currentUser.username.replace(/[.#$\[\]]/g, "_");
                 
                 periods.forEach(period => {
                     const userRef = db.ref('rankings/' + period + '/' + sanitizedUsername);
-                    
                     userRef.transaction((currentData) => {
                         if (currentData === null) {
                             return {
@@ -585,33 +584,29 @@
                                 hasPerfectGame: hasPerfectGame
                             };
                         } else {
-                            // Sumujemy punkty
+                            // Sumujemy punkty!
                             return {
                                 username: currentUser.username,
                                 score: (currentData.score || 0) + score,
-                                attempts: currentData.attempts, // Zapisujemy ostatnią próbę lub można uśredniać
+                                attempts: currentData.attempts,
                                 hasPerfectGame: currentData.hasPerfectGame || hasPerfectGame
                             };
                         }
                     });
                 });
             } else {
-                console.warn("Brak połączenia z bazą danych, ranking globalny nie zaktualizowany.");
+                console.warn("Brak połączenia z Firebase.");
             }
         }
 
-        // Ładowanie rankingu z Firebase
         function loadRanking(period){
             const rankingList = document.getElementById('rankingList');
             const tabs = document.querySelectorAll('.ranking-tab');
-            
-            // UI Update Tabs
             tabs.forEach(tab => { 
                 tab.classList.remove('active'); 
                 if(tab.getAttribute('data-tab')===period){ tab.classList.add('active'); } 
             });
 
-            // Pokaż loader
             rankingList.innerHTML = '<div class="loader loader-center"></div>';
 
             if (!db) {
@@ -619,7 +614,6 @@
                 return;
             }
 
-            // Pobierz dane z Firebase
             const rankingRef = db.ref('rankings/' + period);
             
             rankingRef.orderByChild('score').limitToLast(10).once('value').then((snapshot) => {
@@ -627,13 +621,11 @@
                 snapshot.forEach((childSnapshot) => {
                     data.push(childSnapshot.val());
                 });
-                
-                // Firebase zwraca rosnąco, więc odwracamy kolejność (najwięcej punktów na górze)
-                data.reverse();
+                data.reverse(); // Malejąco
                 
                 let html = '';
                 if(data.length === 0){
-                    html = `<div style="text-align:center;padding:40px;color:#8d99ae">Brak wyników w tym okresie. Bądź pierwszy!</div>`;
+                    html = `<div style="text-align:center;padding:40px;color:#8d99ae">Brak wyników. Bądź pierwszy!</div>`;
                 } else {
                     data.forEach((entry, index) => {
                         const isCurrentUser = currentUser && entry.username === currentUser.username;
@@ -663,11 +655,10 @@
 
         // HINTS & UI
         function showHintPopup(){ showPopup('hintPopup') }
-        
         function acceptHint(){ 
             hidePopup('hintPopup'); 
             if (gameInstance) {
-                gameInstance.useHint(); // Mark hint as used
+                gameInstance.useHint(); 
                 gameInstance.showHint(); 
             }
         }
@@ -696,8 +687,8 @@
             },300)
         }
         function showRegistrationSuccess(){showPopup('registrationPopup')}
-        function showGameSuccess(e){document.getElementById('successMessageText').textContent=e,showPopup('successPopup')}
-        function showGameFailure(e){document.getElementById('failureMessageText').textContent=e,showPopup('failurePopup')}
+        function showGameSuccess(e){document.getElementById('successMessageText').innerText=e,showPopup('successPopup')} // Używamy innerText dla bezpieczenstwa i formatowania
+        function showGameFailure(e){document.getElementById('failureMessageText').innerText=e,showPopup('failurePopup')}
         function showRules(){hideMenuDropdown(),showPopup('rulesPopup')}
         function showRanking(){hideMenuDropdown(),loadRanking('daily'),showPopup('rankingPopup')}
         function showLogin(){document.querySelectorAll('.auth-tab').forEach(e=>e.classList.remove('active')),document.querySelectorAll('.auth-form').forEach(e=>e.classList.remove('active')),document.querySelector('[data-tab="login"]').classList.add('active'),document.getElementById('loginForm').classList.add('active'),hideMessages()}
@@ -798,6 +789,19 @@
             let audioTimeout = null;
             const fragmentDurations=[0.2,0.5,3,5,15]; 
             
+            // STREAK MANAGEMENT
+            let currentStreak = 0;
+            const streakElement = document.getElementById('streakCounter');
+
+            function updateStreakUI() {
+                if (currentStreak > 0) {
+                    streakElement.textContent = `🔥 Seria: ${currentStreak}`;
+                    streakElement.classList.add('show');
+                } else {
+                    streakElement.classList.remove('show');
+                }
+            }
+
             function stopAudio() {
                 if(audioObject) { audioObject.pause(); audioObject.currentTime = 0; }
                 if(audioTimeout) { clearTimeout(audioTimeout); audioTimeout = null; }
@@ -922,10 +926,15 @@
 
             function calculateScore(attemptNumber){
                 if (hintUsed) return 0;
+
                 const baseScores=[1000,800,600,400,200];
                 const penalty=-100;
+                
                 if(attemptNumber<=4){
-                    return baseScores[attemptNumber];
+                    let score = baseScores[attemptNumber];
+                    const streakMultiplier = Math.min(currentStreak * 0.1, 0.5);
+                    const bonus = Math.floor(score * streakMultiplier);
+                    return score + bonus;
                 } else {
                     return penalty;
                 }
@@ -962,11 +971,15 @@
                     
                     const score = calculateScore(currentAttemptIndex);
                     const hasPerfectGame = (currentAttemptIndex===0);
+                    
+                    currentStreak++;
+                    updateStreakUI();
 
                     updateRankings(score, currentAttemptIndex+1, hasPerfectGame);
                     
-                    let msg = `Zgadłeś za ${currentAttemptIndex+1} razem! Zdobywasz ${score} punktów!`;
-                    if(hintUsed) msg = `Zgadłeś! Ale użyłeś podpowiedzi: 0 pkt.`;
+                    let msg = `Brawo! To: "${currentSong.title}" - ${currentSong.artist}.\nZgadłeś za ${currentAttemptIndex+1} razem! Zdobywasz ${score} punktów!`;
+                    if(hintUsed) msg = `Zgadłeś! Ale użyłeś podpowiedzi: 0 pkt.\nTo było: "${currentSong.title}" - ${currentSong.artist}`;
+                    else if(currentStreak > 1) msg += `\n(Bonus za serię x${currentStreak}!)`;
                     
                     showGameSuccess(msg);
                     updateActionButton();
@@ -975,6 +988,8 @@
                     tile.className='guess-tile incorrect';
                     tile.innerHTML=`<div class="song-title">${userGuessTitle}</div><div class="song-artist">${userGuessArtist}</div>`;
                     
+                    if(currentStreak > 0) { currentStreak = 0; updateStreakUI(); }
+
                     currentAttemptIndex++;
                     if(currentAttemptIndex === 4){ showHintPopup(); }
                     if(currentAttemptIndex < 5){ currentLevelIndex = currentAttemptIndex; updateProgressUI(); }
@@ -994,6 +1009,8 @@
                 stopAudio();
                 clearPendingTrack();
                 
+                if(currentStreak > 0) { currentStreak = 0; updateStreakUI(); }
+
                 if(currentAttemptIndex < 5){
                     const tile = guessTiles[currentAttemptIndex];
                     tile.className = 'guess-tile skipped';
