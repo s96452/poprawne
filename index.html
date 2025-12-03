@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jaka to melodia? - Hits Edition</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
     <style>
         /* STYLE BAZOWE */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
@@ -123,7 +127,7 @@
         .ranking-tabs{display:flex;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.1)}
         .ranking-tab{flex:1;text-align:center;padding:12px;cursor:pointer;font-weight:600;transition:all .3s ease;border-bottom:3px solid transparent}
         .ranking-tab.active{color:#a8dadc;border-bottom-color:#a8dadc}
-        .ranking-list{max-height:400px;overflow-y:auto}
+        .ranking-list{max-height:400px;overflow-y:auto; min-height: 100px;}
         .ranking-item{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.1);transition:all .2s ease}
         .ranking-item:hover{background:rgba(168,218,220,.1)}
         .ranking-item.current-user{background:rgba(42,157,143,.2);border-left:3px solid #2a9d8f}
@@ -154,7 +158,27 @@
             display: inline-block;
             margin-left: 10px;
         }
+        .loader-center { margin: 20px auto; display: block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* STREAK COUNTER */
+        .streak-counter {
+            position: absolute;
+            top: -25px;
+            right: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffbe0b;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: none;
+            animation: bounceIn 0.5s;
+        }
+        .streak-counter.show { display: block; }
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); }
+        }
 
         /* LEGAL FOOTER - DEEZER */
         .legal-footer {
@@ -178,8 +202,8 @@
         <div class="menu-icon" onclick="toggleMenuDropdown()"><div class="menu-bar"></div><div class="menu-bar"></div><div class="menu-bar"></div></div>
         <div class="menu-dropdown" id="menuDropdown">
             <div class="menu-item" onclick="showRules()">📝 Zasady gry</div>
-            <div class="menu-item" onclick="showRanking()">🏆 Rankingi</div>
-            <div class="menu-item" onclick="showStats()">📊 Statystyki</div>
+            <div class="menu-item" onclick="showRanking()">🏆 Globalny Ranking</div>
+            <div class="menu-item" onclick="showStats()">📊 Moje Statystyki</div>
         </div>
     </div>
 
@@ -223,6 +247,7 @@
         
         <div class="controls-section">
             <div class="search-section">
+                <div class="streak-counter" id="streakCounter">🔥 Seria: 0</div>
                 <input type="text" class="search-input" placeholder="Wpisz tytuł piosenki..." id="songSearchInput">
                 <button class="action-btn" id="actionBtn">Skip</button>
                 <div class="suggestions" id="songSuggestions"></div>
@@ -243,7 +268,7 @@
         <div class="user-icon" onclick="toggleUserDropdown()">👤</div>
         <div class="user-dropdown" id="userDropdown">
             <div class="user-info-dropdown">Witaj, <span id="userDisplayName"></span>!</div>
-            <div class="dropdown-item" onclick="showStats()">📊 Statystyki</div>
+            <div class="dropdown-item" onclick="showStats()">📊 Moje Statystyki</div>
             <div class="dropdown-item logout" onclick="logout()">🚪 Wyloguj</div>
         </div>
     </div>
@@ -263,14 +288,15 @@
     <div class="popup-overlay" id="rankingPopup">
         <div class="popup success" style="max-width:500px">
             <div class="popup-icon">🏆</div>
-            <div class="popup-title">Rankingi (Suma Punktów)</div>
+            <div class="popup-title">Globalny Ranking (Suma Punktów)</div>
             <div class="ranking-tabs">
                 <div class="ranking-tab active" data-tab="daily">Dzienne</div>
                 <div class="ranking-tab" data-tab="weekly">Tygodniowe</div>
                 <div class="ranking-tab" data-tab="monthly">Miesięczne</div>
             </div>
             <div class="ranking-list" id="rankingList">
-                </div>
+                <div class="loader loader-center"></div>
+            </div>
             <button class="popup-btn" onclick="hidePopup('rankingPopup')" style="margin-top:20px">Zamknij</button>
         </div>
     </div>
@@ -308,28 +334,52 @@
     <div class="popup-overlay" id="registrationPopup"><div class="popup success"><div class="popup-icon">✓</div><div class="popup-title">Rejestracja udana!</div><div class="popup-message">Twoje konto zostało utworzone pomyślnie. Możesz się teraz zalogować.</div><button class="popup-btn" onclick="hidePopup('registrationPopup')">OK</button></div></div>
     <div class="popup-overlay" id="successPopup"><div class="popup success"><div class="popup-icon">🎯</div><div class="popup-title">Gratulacje!</div><div class="popup-message" id="successMessageText"></div><button class="popup-btn" onclick="startNewGame()">Nowa gra</button></div></div>
     <div class="popup-overlay" id="failurePopup"><div class="popup error"><div class="popup-icon">✗</div><div class="popup-title">Koniec gry</div><div class="popup-message" id="failureMessageText"></div><button class="popup-btn" onclick="startNewGame()">Nowa gra</button></div></div>
-    <div class="popup-overlay" id="rulesPopup"><div class="popup success"><div class="popup-icon">📝</div><div class="popup-title">Zasady gry</div><div class="popup-message" style="text-align:left;line-height:1.6"><p><strong>Cel gry:</strong> Odgadnij tytuł piosenki na podstawie fragmentu melodii.</p><p><strong>Zasady:</strong></p><ul style="margin-left:20px;margin-bottom:15px"><li>Masz 5 prób na odgadnięcie piosenki</li><li>Czasy fragmentów: 0.2s, 0.5s, 3s, 5s, 15s</li><li><strong>Punkty się sumują!</strong> Graj więcej, by awansować w rankingu.</li><li>Podpowiedź zeruje punkty w rundzie!</li></ul><p><strong>Powodzenia!</strong></p></div><button class="popup-btn" onclick="hidePopup('rulesPopup')">Rozumiem</button></div></div>
+    <div class="popup-overlay" id="rulesPopup"><div class="popup success"><div class="popup-icon">📝</div><div class="popup-title">Zasady gry</div><div class="popup-message" style="text-align:left;line-height:1.6"><p><strong>Cel gry:</strong> Odgadnij tytuł piosenki na podstawie fragmentu melodii.</p><p><strong>Zasady:</strong></p><ul style="margin-left:20px;margin-bottom:15px"><li>Masz 5 prób na odgadnięcie piosenki.</li><li>Czasy fragmentów: 0.2s, 0.5s, 3s, 5s, 15s.</li><li><strong>Ranking:</strong> Punkty z każdej gry się sumują! Im więcej grasz, tym wyższą masz pozycję.</li><li><strong>Seria (Streak):</strong> Zgadywanie bez błędów zwiększa mnożnik punktów!</li><li><strong>Podpowiedź:</strong> Możesz jej użyć po 4. próbie, ale wtedy otrzymasz <strong>0 punktów</strong> za tę rundę.</li></ul><p><strong>Powodzenia!</strong></p></div><button class="popup-btn" onclick="hidePopup('rulesPopup')">Rozumiem</button></div></div>
     <div class="popup-overlay" id="loadingPopup"><div class="popup success" style="border-color: #a8dadc"><div class="loader" style="width: 40px; height: 40px; margin: 0 auto 20px auto; display: block;"></div><div class="popup-title" style="color: #a8dadc">Pobieranie utworu...</div></div></div>
 
     <script>
+        // ==========================================
+        import { initializeApp } from "firebase/app";
+        import { getAnalytics } from "firebase/analytics";
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCE6hYMk-FRmxR7R5dLweIoUDfBaG-0U_8",
+            authDomain: "jaka-to-melodia-b4905.firebaseapp.com",
+            projectId: "jaka-to-melodia-b4905",
+            storageBucket: "jaka-to-melodia-b4905.firebasestorage.app",
+            messagingSenderId: "496016069426",
+            appId: "1:496016069426:web:0f5d6eff199561ae647d2b",
+            measurementId: "G-DMD97RB5JL"
+            // appId: "ID_APLIKACJI"
+        };
+
+        // Inicjalizacja (bezpieczna)
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            console.log("Firebase initialized");
+        } catch (e) {
+            console.error("Błąd konfiguracji Firebase - Ranking globalny nie będzie działać (Uzupełnij firebaseConfig)", e);
+        }
+
+        // ==========================================
         // CONFIG - PROXY & API
+        // ==========================================
         const CORS_PROXY = 'https://corsproxy.io/?'; 
         const DEEZER_API_URL = 'https://api.deezer.com';
         
-        // Playlist ID for "100% Hits" (usually very English focused)
-        // ID: 3155776842
+        // Playlist ID for "100% Hits" 
         const ENGLISH_PLAYLIST_ID = '3155776842'; 
 
         // DEEZER SERVICE
         const DeezerService = {
-            // Cache for the playlist to avoid fetching it every single time
             playlistCache: [],
 
             async initializePlaylist() {
                 if (this.playlistCache.length > 0) return;
                 
                 try {
-                    // Fetch tracks from specific playlist
                     const playlistUrl = `${CORS_PROXY}${encodeURIComponent(DEEZER_API_URL + '/playlist/' + ENGLISH_PLAYLIST_ID + '/tracks?limit=100')}`;
                     const response = await fetch(playlistUrl);
                     if (!response.ok) throw new Error('Network response was not ok');
@@ -337,9 +387,8 @@
                     const data = await response.json();
                     if (!data.data || data.data.length === 0) throw new Error('No tracks found');
 
-                    // Filter and map
                     this.playlistCache = data.data
-                        .filter(track => track.preview) // Ensure preview exists
+                        .filter(track => track.preview) 
                         .map(track => ({
                             id: track.id,
                             title: track.title,
@@ -351,18 +400,14 @@
                     console.log(`Załadowano ${this.playlistCache.length} utworów do bazy.`);
                 } catch (error) {
                     console.error('Deezer Playlist Error:', error);
-                    // Fallback to empty, will be handled in loadNewSong
                 }
             },
 
             async getRandomTrack() {
-                // Ensure playlist is loaded
                 if (this.playlistCache.length === 0) {
                     await this.initializePlaylist();
                 }
-
                 if (this.playlistCache.length === 0) return null;
-
                 const randomIndex = Math.floor(Math.random() * this.playlistCache.length);
                 return this.playlistCache[randomIndex];
             },
@@ -381,23 +426,16 @@
             }
         };
 
-        // POZOSTAŁE ZMIENNE
+        // ZMIENNE
         let users = JSON.parse(localStorage.getItem('users')) || [];
         let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
         let gameInstance = null;
-        let rankings = JSON.parse(localStorage.getItem('rankings')) || {
-            daily: [], weekly: [], monthly: []
-        };
         let gameStartTime = null;
         let playTimeInterval = null;
         let statsUpdateInterval = null;
 
-        // Inicjalizacja rankingów przy pierwszym uruchomieniu
-        initializeRankings();
-
-        // GLOBALNE EVENT LISTENERY
+        // EVENTS
         document.addEventListener('DOMContentLoaded', function() {
-            // Pre-load playlist
             DeezerService.initializePlaylist();
 
             document.addEventListener('click', function(e) {
@@ -419,9 +457,7 @@
                 let debounceTimer;
                 searchInput.addEventListener('input', function() {
                     const searchText = searchInput.value.trim();
-                    
                     if(gameInstance) gameInstance.clearPendingTrack();
-
                     clearTimeout(debounceTimer);
                     debounceTimer = setTimeout(() => {
                         if (searchText.length > 0 && gameInstance) {
@@ -430,7 +466,6 @@
                             document.getElementById('songSuggestions').style.display = 'none';
                         }
                     }, 200); 
-                    
                     updateActionButton();
                 });
 
@@ -463,11 +498,9 @@
             }
         });
 
-        // SYSTEM ŚLEDZENIA CZASU GRY
+        // TIME TRACKING
         function startPlayTimeTracking() {
-            if (playTimeInterval) {
-                clearInterval(playTimeInterval);
-            }
+            if (playTimeInterval) clearInterval(playTimeInterval);
             gameStartTime = Date.now();
             playTimeInterval = setInterval(() => {
                 if (currentUser && gameStartTime) {
@@ -487,10 +520,7 @@
         }
 
         function stopPlayTimeTracking() {
-            if (playTimeInterval) {
-                clearInterval(playTimeInterval);
-                playTimeInterval = null;
-            }
+            if (playTimeInterval) { clearInterval(playTimeInterval); playTimeInterval = null; }
             if (currentUser && gameStartTime) {
                 const timePlayed = Date.now() - gameStartTime;
                 currentUser.playTime = (currentUser.playTime || 0) + timePlayed;
@@ -518,32 +548,14 @@
             document.getElementById('statPlayTime').textContent = formatPlayTime(playTime);
         }
 
-        // RANKINGI
-        function initializeRankings(){
-            const now=new Date()
-            const today=new Date(now.getFullYear(),now.getMonth(),now.getDate())
-            const lastReset=JSON.parse(localStorage.getItem('lastRankingReset'))||{
-                daily: today.getTime()-86400000,
-                weekly: today.getTime()-604800000,
-                monthly: today.getTime()-2592000000
-            }
+        // ==========================================
+        // RANKINGI (FIREBASE)
+        // ==========================================
 
-            const shouldResetDaily=now.getTime()-lastReset.daily>=86400000
-            const shouldResetWeekly=now.getTime()-lastReset.weekly>=604800000
-            const shouldResetMonthly=now.getTime()-lastReset.monthly>=2592000000
-
-            if(shouldResetDaily){ rankings.daily=[]; lastReset.daily=now.getTime() }
-            if(shouldResetWeekly){ rankings.weekly=[]; lastReset.weekly=now.getTime() }
-            if(shouldResetMonthly){ rankings.monthly=[]; lastReset.monthly=now.getTime() }
-
-            localStorage.setItem('rankings',JSON.stringify(rankings))
-            localStorage.setItem('lastRankingReset',JSON.stringify(lastReset))
-        }
-
-        // ZMIANA: Punkty się dodają (akumulacja)
         function updateRankings(score, attempts, hasPerfectGame=false){
-            if(!currentUser)return
+            if(!currentUser) return
             
+            // 1. Lokalne statystyki
             currentUser.gamesPlayed=(currentUser.gamesPlayed||0)+1
             currentUser.totalScore=(currentUser.totalScore||0)+score
             currentUser.bestScore=Math.max(currentUser.bestScore||0,score)
@@ -555,57 +567,98 @@
                 localStorage.setItem('users',JSON.stringify(users))
             }
             
-            const gameData={
-                username:currentUser.username,
-                score:score,
-                attempts:attempts, // This will be last game's attempts
-                hasPerfectGame:hasPerfectGame
+            // 2. Globalny Ranking (Firebase)
+            if(db) {
+                const periods = ['daily', 'weekly', 'monthly'];
+                // Uproszczona nazwa użytkownika jako klucz
+                const sanitizedUsername = currentUser.username.replace(/[.#$\[\]]/g, "_");
+                
+                periods.forEach(period => {
+                    const userRef = db.ref('rankings/' + period + '/' + sanitizedUsername);
+                    userRef.transaction((currentData) => {
+                        if (currentData === null) {
+                            return {
+                                username: currentUser.username,
+                                score: score,
+                                attempts: attempts,
+                                hasPerfectGame: hasPerfectGame
+                            };
+                        } else {
+                            // Sumujemy punkty!
+                            return {
+                                username: currentUser.username,
+                                score: (currentData.score || 0) + score,
+                                attempts: currentData.attempts,
+                                hasPerfectGame: currentData.hasPerfectGame || hasPerfectGame
+                            };
+                        }
+                    });
+                });
+            } else {
+                console.warn("Brak połączenia z Firebase.");
             }
-            
-            updateRankingPeriod('daily',gameData)
-            updateRankingPeriod('weekly',gameData)
-            updateRankingPeriod('monthly',gameData)
-            
-            localStorage.setItem('rankings',JSON.stringify(rankings))
         }
 
-        // ZMIANA: Logika dodawania punktów do istniejącego wpisu
-        function updateRankingPeriod(period,gameData){
-            if(!rankings[period])rankings[period]=[]
-            
-            const existingIndex=rankings[period].findIndex(entry=>entry.username===gameData.username)
-            
-            if(existingIndex>=0){
-                // DODAJEMY PUNKTY
-                rankings[period][existingIndex].score += gameData.score;
-                // Możemy aktualizować inne statystyki, np. Perfect Games
-                if(gameData.hasPerfectGame) {
-                    rankings[period][existingIndex].hasPerfectGame = true;
-                }
-            }else{
-                // NOWY WPIS
-                rankings[period].push({
-                    username: gameData.username,
-                    score: gameData.score,
-                    attempts: gameData.attempts,
-                    hasPerfectGame: gameData.hasPerfectGame
-                })
+        function loadRanking(period){
+            const rankingList = document.getElementById('rankingList');
+            const tabs = document.querySelectorAll('.ranking-tab');
+            tabs.forEach(tab => { 
+                tab.classList.remove('active'); 
+                if(tab.getAttribute('data-tab')===period){ tab.classList.add('active'); } 
+            });
+
+            rankingList.innerHTML = '<div class="loader loader-center"></div>';
+
+            if (!db) {
+                rankingList.innerHTML = `<div style="text-align:center;padding:40px;color:#e63946">Brak konfiguracji Firebase</div>`;
+                return;
             }
+
+            const rankingRef = db.ref('rankings/' + period);
             
-            // Sortowanie malejąco
-            rankings[period].sort((a,b)=>b.score-a.score)
-            // Limit 10
-            rankings[period]=rankings[period].slice(0,10)
+            rankingRef.orderByChild('score').limitToLast(10).once('value').then((snapshot) => {
+                const data = [];
+                snapshot.forEach((childSnapshot) => {
+                    data.push(childSnapshot.val());
+                });
+                data.reverse(); // Malejąco
+                
+                let html = '';
+                if(data.length === 0){
+                    html = `<div style="text-align:center;padding:40px;color:#8d99ae">Brak wyników. Bądź pierwszy!</div>`;
+                } else {
+                    data.forEach((entry, index) => {
+                        const isCurrentUser = currentUser && entry.username === currentUser.username;
+                        const medalClass = index < 3 ? `ranking-position-${index+1}` : '';
+                        const medalIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                        
+                        html += `
+                            <div class="ranking-item ${isCurrentUser?'current-user':''}">
+                                <div class="ranking-position ${medalClass}">${medalIcon} ${index+1}</div>
+                                <div class="ranking-info">
+                                    <div class="ranking-username">${entry.username}</div>
+                                    <div class="ranking-stats">
+                                        <span class="ranking-score">${entry.score} pkt</span>
+                                        ${entry.hasPerfectGame?'<span>⭐ Perfect</span>':''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                rankingList.innerHTML = html;
+            }).catch((error) => {
+                console.error("Błąd pobierania rankingu:", error);
+                rankingList.innerHTML = `<div style="text-align:center;padding:40px;color:#e63946">Błąd pobierania danych</div>`;
+            });
         }
 
         // HINTS & UI
         function showHintPopup(){ showPopup('hintPopup') }
-        
-        // ZMIANA: Użycie flagi hint w grze
         function acceptHint(){ 
             hidePopup('hintPopup'); 
             if (gameInstance) {
-                gameInstance.useHint(); // Mark hint as used
+                gameInstance.useHint(); 
                 gameInstance.showHint(); 
             }
         }
@@ -634,8 +687,8 @@
             },300)
         }
         function showRegistrationSuccess(){showPopup('registrationPopup')}
-        function showGameSuccess(e){document.getElementById('successMessageText').textContent=e,showPopup('successPopup')}
-        function showGameFailure(e){document.getElementById('failureMessageText').textContent=e,showPopup('failurePopup')}
+        function showGameSuccess(e){document.getElementById('successMessageText').innerText=e,showPopup('successPopup')} // Używamy innerText dla bezpieczenstwa i formatowania
+        function showGameFailure(e){document.getElementById('failureMessageText').innerText=e,showPopup('failurePopup')}
         function showRules(){hideMenuDropdown(),showPopup('rulesPopup')}
         function showRanking(){hideMenuDropdown(),loadRanking('daily'),showPopup('rankingPopup')}
         function showLogin(){document.querySelectorAll('.auth-tab').forEach(e=>e.classList.remove('active')),document.querySelectorAll('.auth-form').forEach(e=>e.classList.remove('active')),document.querySelector('[data-tab="login"]').classList.add('active'),document.getElementById('loginForm').classList.add('active'),hideMessages()}
@@ -721,37 +774,8 @@
 
         document.addEventListener('click',e=>{const t=document.getElementById('userMenu'),o=document.getElementById('sideMenu');t&&!t.contains(e.target)&&hideUserDropdown(),o&&!o.contains(e.target)&&hideMenuDropdown()})
 
-        function loadRanking(period){
-            const rankingList=document.getElementById('rankingList'), tabs=document.querySelectorAll('.ranking-tab')
-            tabs.forEach(tab=>{ tab.classList.remove('active'); if(tab.getAttribute('data-tab')===period){ tab.classList.add('active') } })
-            const periodRankings=rankings[period]||[]; let html=''
-            if(periodRankings.length===0){
-                html=`<div style="text-align:center;padding:40px;color:#8d99ae">Brak wyników w tym okresie</div>`
-            }else{
-                periodRankings.forEach((entry,index)=>{
-                    const isCurrentUser=currentUser&&entry.username===currentUser.username
-                    const medalClass=index<3?`ranking-position-${index+1}`:''
-                    const medalIcon=index===0?'🥇':index===1?'🥈':index===2?'🥉':''
-                    html+=`
-                        <div class="ranking-item ${isCurrentUser?'current-user':''}">
-                            <div class="ranking-position ${medalClass}">${medalIcon} ${index+1}</div>
-                            <div class="ranking-info">
-                                <div class="ranking-username">${entry.username}</div>
-                                <div class="ranking-stats">
-                                    <span class="ranking-score">${entry.score} pkt</span>
-                                    <span>Próby: ${entry.attempts}/5</span>
-                                    ${entry.hasPerfectGame?'<span>⭐ Perfect</span>':''}
-                                </div>
-                            </div>
-                        </div>
-                    `
-                })
-            }
-            rankingList.innerHTML=html
-        }
-
         // ==========================================
-        // GŁÓWNA LOGIKA GRY (UPDATED)
+        // GŁÓWNA LOGIKA GRY
         // ==========================================
         function initGame(){
             const progressElements=document.querySelectorAll('.progress-time');
@@ -760,11 +784,24 @@
             let currentLevelIndex=0;
             let currentSong=null;
             let pendingTrack=null; 
-            let hintUsed=false; // ZMIANA: Flaga użycia podpowiedzi
+            let hintUsed=false; 
             let audioObject = null;
             let audioTimeout = null;
             const fragmentDurations=[0.2,0.5,3,5,15]; 
             
+            // STREAK MANAGEMENT
+            let currentStreak = 0;
+            const streakElement = document.getElementById('streakCounter');
+
+            function updateStreakUI() {
+                if (currentStreak > 0) {
+                    streakElement.textContent = `🔥 Seria: ${currentStreak}`;
+                    streakElement.classList.add('show');
+                } else {
+                    streakElement.classList.remove('show');
+                }
+            }
+
             function stopAudio() {
                 if(audioObject) { audioObject.pause(); audioObject.currentTime = 0; }
                 if(audioTimeout) { clearTimeout(audioTimeout); audioTimeout = null; }
@@ -775,7 +812,7 @@
                 showPopup('loadingPopup');
                 stopAudio();
                 clearPendingTrack();
-                hintUsed = false; // Reset hint flag
+                hintUsed = false; 
                 
                 try {
                     currentSong = await DeezerService.getRandomTrack();
@@ -876,7 +913,6 @@
                 }).join(' ');
             }
 
-            // ZMIANA: Mark hint used
             function useHint() {
                 hintUsed = true;
             }
@@ -889,14 +925,16 @@
             }
 
             function calculateScore(attemptNumber){
-                // ZMIANA: Jeśli użyto podpowiedzi, 0 punktów
                 if (hintUsed) return 0;
 
                 const baseScores=[1000,800,600,400,200];
                 const penalty=-100;
                 
                 if(attemptNumber<=4){
-                    return baseScores[attemptNumber];
+                    let score = baseScores[attemptNumber];
+                    const streakMultiplier = Math.min(currentStreak * 0.1, 0.5);
+                    const bonus = Math.floor(score * streakMultiplier);
+                    return score + bonus;
                 } else {
                     return penalty;
                 }
@@ -933,11 +971,15 @@
                     
                     const score = calculateScore(currentAttemptIndex);
                     const hasPerfectGame = (currentAttemptIndex===0);
+                    
+                    currentStreak++;
+                    updateStreakUI();
 
                     updateRankings(score, currentAttemptIndex+1, hasPerfectGame);
                     
-                    let msg = `Zgadłeś za ${currentAttemptIndex+1} razem! Zdobywasz ${score} punktów!`;
-                    if(hintUsed) msg = `Zgadłeś! Ale użyłeś podpowiedzi: 0 pkt.`;
+                    let msg = `Brawo! To: "${currentSong.title}" - ${currentSong.artist}.\nZgadłeś za ${currentAttemptIndex+1} razem! Zdobywasz ${score} punktów!`;
+                    if(hintUsed) msg = `Zgadłeś! Ale użyłeś podpowiedzi: 0 pkt.\nTo było: "${currentSong.title}" - ${currentSong.artist}`;
+                    else if(currentStreak > 1) msg += `\n(Bonus za serię x${currentStreak}!)`;
                     
                     showGameSuccess(msg);
                     updateActionButton();
@@ -946,6 +988,8 @@
                     tile.className='guess-tile incorrect';
                     tile.innerHTML=`<div class="song-title">${userGuessTitle}</div><div class="song-artist">${userGuessArtist}</div>`;
                     
+                    if(currentStreak > 0) { currentStreak = 0; updateStreakUI(); }
+
                     currentAttemptIndex++;
                     if(currentAttemptIndex === 4){ showHintPopup(); }
                     if(currentAttemptIndex < 5){ currentLevelIndex = currentAttemptIndex; updateProgressUI(); }
@@ -965,6 +1009,8 @@
                 stopAudio();
                 clearPendingTrack();
                 
+                if(currentStreak > 0) { currentStreak = 0; updateStreakUI(); }
+
                 if(currentAttemptIndex < 5){
                     const tile = guessTiles[currentAttemptIndex];
                     tile.className = 'guess-tile skipped';
