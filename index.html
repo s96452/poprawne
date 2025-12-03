@@ -7,8 +7,21 @@
     <style>
         /* STYLE BAZOWE */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
-        body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;position:relative;padding-bottom: 60px;}
-        .container{max-width:400px;width:100%;margin:0 auto}
+        body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;position:relative;padding-bottom: 60px; overflow-x: hidden;}
+        
+        /* MATRIX CANVAS */
+        #matrixCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Za treścią */
+            opacity: 0.15; /* Subtelny efekt */
+            pointer-events: none;
+        }
+
+        .container{max-width:400px;width:100%;margin:0 auto; position: relative; z-index: 1;}
         header{text-align:center;margin-bottom:40px;width:100%}
         h1{font-size:42px;font-weight:800;margin-bottom:10px;background:linear-gradient(45deg,#fff,#a8dadc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2}
         .project-info{text-align:center;font-size:14px;color:#8d99ae;margin-bottom:20px;font-style:italic}
@@ -113,7 +126,7 @@
         .reset-icon::after{bottom:0;border-top:none;border-right:none}
 
         /* HINTS */
-        .hint-container{position:fixed;right:20px;top:50%;transform:translateY(-50%);background:rgba(26,26,46,.95);border:1px solid rgba(168,218,220,.3);border-radius:15px;padding:20px;backdrop-filter:blur(20px);display:none;max-width:250px;box-shadow:0 8px 25px rgba(0,0,0,.4)}
+        .hint-container{position:fixed;right:20px;top:50%;transform:translateY(-50%);background:rgba(26,26,46,.95);border:1px solid rgba(168,218,220,.3);border-radius:15px;padding:20px;backdrop-filter:blur(20px);display:none;max-width:250px;box-shadow:0 8px 25px rgba(0,0,0,.4); z-index: 100;}
         .hint-container.show{display:block;animation:fadeInRight .3s ease}
         .hint-title{font-size:18px;font-weight:700;margin-bottom:15px;color:#a8dadc;text-align:center}
         .hint-text{font-size:20px;font-weight:600;letter-spacing:2px;text-align:center;line-height:1.4;color:#fff;font-family:'Courier New',monospace}
@@ -166,6 +179,7 @@
             opacity: 0.7;
             font-size: 12px;
             color: #8d99ae;
+            z-index: 10;
         }
         
         @media (max-width:480px){body{padding:20px 10px; padding-bottom: 50px;}.side-menu,.user-menu{top:15px}.side-menu{left:15px}.user-menu{right:15px}.menu-icon,.user-icon{width:40px;height:40px}.menu-dropdown,.user-dropdown{top:50px;min-width:180px}.popup{padding:25px 20px;width:95%}.popup-title{font-size:20px}.popup-message{font-size:14px}.container{padding:0 10px}h1{font-size:32px}.project-info{font-size:12px}.auth-container{padding:20px 15px}.progress-container{gap:5px}.progress-time{font-size:11px;padding:4px 6px}.controls-section{gap:8px}.action-btn{padding:12px 14px;font-size:13px;min-width:85px}.search-input{font-size:14px;padding:12px 14px}.guess-tile{padding:12px 15px;font-size:13px}.song-title{font-size:14px}.song-artist{font-size:11px}.hint-container{right:10px;max-width:200px;padding:15px}.hint-text{font-size:16px}.stats-grid{grid-template-columns:1fr;gap:10px}}
@@ -174,6 +188,8 @@
     </style>
 </head>
 <body>
+    <canvas id="matrixCanvas"></canvas>
+
     <div class="side-menu" id="sideMenu" style="display:none">
         <div class="menu-icon" onclick="toggleMenuDropdown()"><div class="menu-bar"></div><div class="menu-bar"></div><div class="menu-bar"></div></div>
         <div class="menu-dropdown" id="menuDropdown">
@@ -308,7 +324,32 @@
     <div class="popup-overlay" id="registrationPopup"><div class="popup success"><div class="popup-icon">✓</div><div class="popup-title">Rejestracja udana!</div><div class="popup-message">Twoje konto zostało utworzone pomyślnie. Możesz się teraz zalogować.</div><button class="popup-btn" onclick="hidePopup('registrationPopup')">OK</button></div></div>
     <div class="popup-overlay" id="successPopup"><div class="popup success"><div class="popup-icon">🎯</div><div class="popup-title">Gratulacje!</div><div class="popup-message" id="successMessageText"></div><button class="popup-btn" onclick="startNewGame()">Nowa gra</button></div></div>
     <div class="popup-overlay" id="failurePopup"><div class="popup error"><div class="popup-icon">✗</div><div class="popup-title">Koniec gry</div><div class="popup-message" id="failureMessageText"></div><button class="popup-btn" onclick="startNewGame()">Nowa gra</button></div></div>
-    <div class="popup-overlay" id="rulesPopup"><div class="popup success"><div class="popup-icon">📝</div><div class="popup-title">Zasady gry</div><div class="popup-message" style="text-align:left;line-height:1.6"><p><strong>Cel gry:</strong> Odgadnij tytuł piosenki na podstawie fragmentu melodii.</p><p><strong>Zasady:</strong></p><ul style="margin-left:20px;margin-bottom:15px"><li>Masz 5 prób na odgadnięcie piosenki</li><li>Czasy fragmentów: 0.2s, 0.5s, 3s, 5s, 15s</li><li><strong>Punkty się sumują!</strong> Graj więcej, by awansować w rankingu.</li><li>Podpowiedź zeruje punkty w rundzie!</li></ul><p><strong>Powodzenia!</strong></p></div><button class="popup-btn" onclick="hidePopup('rulesPopup')">Rozumiem</button></div></div>
+    
+    <div class="popup-overlay" id="rulesPopup">
+        <div class="popup success">
+            <div class="popup-icon">📝</div>
+            <div class="popup-title">Zasady gry</div>
+            <div class="popup-message" style="text-align:left;line-height:1.6">
+                <p><strong>Cel gry:</strong> Odgadnij tytuł piosenki na podstawie fragmentu melodii.</p>
+                <p><strong>Punktacja:</strong></p>
+                <ul style="margin-left:20px;margin-bottom:15px">
+                    <li>1. próba: 1000 pkt</li>
+                    <li>2. próba: 800 pkt</li>
+                    <li>3. próba: 600 pkt</li>
+                    <li>4. próba: 400 pkt</li>
+                    <li>5. próba: 200 pkt</li>
+                </ul>
+                <p><strong>Kary i Podpowiedzi:</strong></p>
+                <ul style="margin-left:20px;margin-bottom:15px">
+                    <li><strong>Podpowiedź:</strong> 0 pkt za rundę!</li>
+                    <li><strong>Nieodgadnięcie (po 5. próbie):</strong> -100 pkt (kara)</li>
+                </ul>
+                <p><strong>Powodzenia!</strong></p>
+            </div>
+            <button class="popup-btn" onclick="hidePopup('rulesPopup')">Rozumiem</button>
+        </div>
+    </div>
+    
     <div class="popup-overlay" id="loadingPopup"><div class="popup success" style="border-color: #a8dadc"><div class="loader" style="width: 40px; height: 40px; margin: 0 auto 20px auto; display: block;"></div><div class="popup-title" style="color: #a8dadc">Pobieranie utworu...</div></div></div>
 
     <script>
@@ -316,57 +357,32 @@
         const CORS_PROXY = 'https://corsproxy.io/?'; 
         const DEEZER_API_URL = 'https://api.deezer.com';
         
-        // Playlist ID for "100% Hits" (usually very English focused)
-        // ID: 3155776842
+        // Playlist ID for "100% Hits"
         const ENGLISH_PLAYLIST_ID = '3155776842'; 
 
         // DEEZER SERVICE
         const DeezerService = {
-            // Cache for the playlist to avoid fetching it every single time
             playlistCache: [],
-
             async initializePlaylist() {
                 if (this.playlistCache.length > 0) return;
-                
                 try {
-                    // Fetch tracks from specific playlist
                     const playlistUrl = `${CORS_PROXY}${encodeURIComponent(DEEZER_API_URL + '/playlist/' + ENGLISH_PLAYLIST_ID + '/tracks?limit=100')}`;
                     const response = await fetch(playlistUrl);
                     if (!response.ok) throw new Error('Network response was not ok');
-                    
                     const data = await response.json();
                     if (!data.data || data.data.length === 0) throw new Error('No tracks found');
-
-                    // Filter and map
-                    this.playlistCache = data.data
-                        .filter(track => track.preview) // Ensure preview exists
-                        .map(track => ({
-                            id: track.id,
-                            title: track.title,
-                            artist: track.artist.name,
-                            preview: track.preview,
-                            album: track.album.cover_small
-                        }));
-
+                    this.playlistCache = data.data.filter(track => track.preview).map(track => ({
+                        id: track.id, title: track.title, artist: track.artist.name, preview: track.preview, album: track.album.cover_small
+                    }));
                     console.log(`Załadowano ${this.playlistCache.length} utworów do bazy.`);
-                } catch (error) {
-                    console.error('Deezer Playlist Error:', error);
-                    // Fallback to empty, will be handled in loadNewSong
-                }
+                } catch (error) { console.error('Deezer Playlist Error:', error); }
             },
-
             async getRandomTrack() {
-                // Ensure playlist is loaded
-                if (this.playlistCache.length === 0) {
-                    await this.initializePlaylist();
-                }
-
+                if (this.playlistCache.length === 0) await this.initializePlaylist();
                 if (this.playlistCache.length === 0) return null;
-
                 const randomIndex = Math.floor(Math.random() * this.playlistCache.length);
                 return this.playlistCache[randomIndex];
             },
-
             async searchTracks(query) {
                 if (!query || query.length < 1) return [];
                 try {
@@ -374,100 +390,91 @@
                     const response = await fetch(searchUrl);
                     const data = await response.json();
                     return data.data || [];
-                } catch (error) {
-                    console.error('Deezer Search Error:', error);
-                    return [];
-                }
+                } catch (error) { console.error('Deezer Search Error:', error); return []; }
             }
         };
 
-        // POZOSTAŁE ZMIENNE
+        // ZMIENNE
         let users = JSON.parse(localStorage.getItem('users')) || [];
         let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
         let gameInstance = null;
-        let rankings = JSON.parse(localStorage.getItem('rankings')) || {
-            daily: [], weekly: [], monthly: []
-        };
+        let rankings = JSON.parse(localStorage.getItem('rankings')) || { daily: [], weekly: [], monthly: [] };
         let gameStartTime = null;
         let playTimeInterval = null;
         let statsUpdateInterval = null;
 
-        // Inicjalizacja rankingów przy pierwszym uruchomieniu
         initializeRankings();
 
         // GLOBALNE EVENT LISTENERY
         document.addEventListener('DOMContentLoaded', function() {
-            // Pre-load playlist
             DeezerService.initializePlaylist();
+            initMatrixEffect(); // Start Matrix Effect
 
-            document.addEventListener('click', function(e) {
-                if (e.target && e.target.id === 'actionBtn') {
-                    handleActionButtonClick();
-                }
-            });
-
-            document.addEventListener('click', function(e) {
-                if (e.target && (e.target.id === 'playBtn' || e.target.closest('#playBtn'))) {
-                    if (gameInstance) {
-                        gameInstance.playCurrentFragment();
-                    }
-                }
-            });
+            document.addEventListener('click', function(e) { if (e.target && e.target.id === 'actionBtn') handleActionButtonClick(); });
+            document.addEventListener('click', function(e) { if (e.target && (e.target.id === 'playBtn' || e.target.closest('#playBtn'))) { if (gameInstance) gameInstance.playCurrentFragment(); } });
 
             const searchInput = document.getElementById('songSearchInput');
             if (searchInput) {
                 let debounceTimer;
                 searchInput.addEventListener('input', function() {
                     const searchText = searchInput.value.trim();
-                    
                     if(gameInstance) gameInstance.clearPendingTrack();
-
                     clearTimeout(debounceTimer);
                     debounceTimer = setTimeout(() => {
-                        if (searchText.length > 0 && gameInstance) {
-                            gameInstance.showSuggestions(searchText);
-                        } else {
-                            document.getElementById('songSuggestions').style.display = 'none';
-                        }
+                        if (searchText.length > 0 && gameInstance) { gameInstance.showSuggestions(searchText); } else { document.getElementById('songSuggestions').style.display = 'none'; }
                     }, 200); 
-                    
                     updateActionButton();
                 });
-
-                searchInput.addEventListener('keypress', function(event) {
-                    if (event.key === 'Enter') {
-                        submitGuess(searchInput.value.trim());
-                    }
-                });
+                searchInput.addEventListener('keypress', function(event) { if (event.key === 'Enter') submitGuess(searchInput.value.trim()); });
             }
 
-            document.querySelectorAll('.ranking-tab').forEach(tab=>{
-                tab.addEventListener('click',function(){
-                    const period=this.getAttribute('data-tab')
-                    loadRanking(period)
-                })
-            });
-
-            document.querySelectorAll('.auth-tab').forEach(e=>{
-                e.addEventListener('click',()=>{
-                    e.getAttribute('data-tab')==='login'?showLogin():showRegister()
-                })
-            });
-
+            document.querySelectorAll('.ranking-tab').forEach(tab=>{ tab.addEventListener('click',function(){ const period=this.getAttribute('data-tab'); loadRanking(period); }) });
+            document.querySelectorAll('.auth-tab').forEach(e=>{ e.addEventListener('click',()=>{ e.getAttribute('data-tab')==='login'?showLogin():showRegister() }) });
             document.getElementById('loginUsernameOrEmail').addEventListener('keypress',e=>{e.key==='Enter'&&login()})
             document.getElementById('loginPassword').addEventListener('keypress',e=>{e.key==='Enter'&&login()})
             document.getElementById('registerPassword').addEventListener('keypress',e=>{e.key==='Enter'&&register()})
 
-            if (currentUser) {
-                showGame();
-            }
+            if (currentUser) showGame();
         });
+
+        // MATRIX EFFECT FUNCTION
+        function initMatrixEffect() {
+            const canvas = document.getElementById('matrixCanvas');
+            const ctx = canvas.getContext('2d');
+
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            const cols = Math.floor(width / 20);
+            const ypos = Array(cols).fill(0);
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            function matrix() {
+                ctx.fillStyle = '#0001'; // Smear effect
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = '#0f0'; // Matrix green (or cyan: #0ff)
+                ctx.fillStyle = '#4cc9f0'; // Using the theme cyan color
+                ctx.font = '15px monospace';
+
+                ypos.forEach((y, ind) => {
+                    const text = String.fromCharCode(Math.random() * 128);
+                    const x = ind * 20;
+                    ctx.fillText(text, x, y);
+                    if (y > 100 + Math.random() * 10000) ypos[ind] = 0;
+                    else ypos[ind] = y + 20;
+                });
+            }
+            setInterval(matrix, 50);
+        }
 
         // SYSTEM ŚLEDZENIA CZASU GRY
         function startPlayTimeTracking() {
-            if (playTimeInterval) {
-                clearInterval(playTimeInterval);
-            }
+            if (playTimeInterval) clearInterval(playTimeInterval);
             gameStartTime = Date.now();
             playTimeInterval = setInterval(() => {
                 if (currentUser && gameStartTime) {
@@ -487,10 +494,7 @@
         }
 
         function stopPlayTimeTracking() {
-            if (playTimeInterval) {
-                clearInterval(playTimeInterval);
-                playTimeInterval = null;
-            }
+            if (playTimeInterval) { clearInterval(playTimeInterval); playTimeInterval = null; }
             if (currentUser && gameStartTime) {
                 const timePlayed = Date.now() - gameStartTime;
                 currentUser.playTime = (currentUser.playTime || 0) + timePlayed;
@@ -523,11 +527,8 @@
             const now=new Date()
             const today=new Date(now.getFullYear(),now.getMonth(),now.getDate())
             const lastReset=JSON.parse(localStorage.getItem('lastRankingReset'))||{
-                daily: today.getTime()-86400000,
-                weekly: today.getTime()-604800000,
-                monthly: today.getTime()-2592000000
+                daily: today.getTime()-86400000, weekly: today.getTime()-604800000, monthly: today.getTime()-2592000000
             }
-
             const shouldResetDaily=now.getTime()-lastReset.daily>=86400000
             const shouldResetWeekly=now.getTime()-lastReset.weekly>=604800000
             const shouldResetMonthly=now.getTime()-lastReset.monthly>=2592000000
@@ -535,12 +536,10 @@
             if(shouldResetDaily){ rankings.daily=[]; lastReset.daily=now.getTime() }
             if(shouldResetWeekly){ rankings.weekly=[]; lastReset.weekly=now.getTime() }
             if(shouldResetMonthly){ rankings.monthly=[]; lastReset.monthly=now.getTime() }
-
             localStorage.setItem('rankings',JSON.stringify(rankings))
             localStorage.setItem('lastRankingReset',JSON.stringify(lastReset))
         }
 
-        // ZMIANA: Punkty się dodają (akumulacja)
         function updateRankings(score, attempts, hasPerfectGame=false){
             if(!currentUser)return
             
@@ -555,59 +554,31 @@
                 localStorage.setItem('users',JSON.stringify(users))
             }
             
-            const gameData={
-                username:currentUser.username,
-                score:score,
-                attempts:attempts, // This will be last game's attempts
-                hasPerfectGame:hasPerfectGame
-            }
-            
+            const gameData={ username:currentUser.username, score:score, attempts:attempts, hasPerfectGame:hasPerfectGame }
             updateRankingPeriod('daily',gameData)
             updateRankingPeriod('weekly',gameData)
             updateRankingPeriod('monthly',gameData)
-            
             localStorage.setItem('rankings',JSON.stringify(rankings))
         }
 
-        // ZMIANA: Logika dodawania punktów do istniejącego wpisu
         function updateRankingPeriod(period,gameData){
             if(!rankings[period])rankings[period]=[]
-            
             const existingIndex=rankings[period].findIndex(entry=>entry.username===gameData.username)
-            
             if(existingIndex>=0){
-                // DODAJEMY PUNKTY
                 rankings[period][existingIndex].score += gameData.score;
-                // Możemy aktualizować inne statystyki, np. Perfect Games
-                if(gameData.hasPerfectGame) {
-                    rankings[period][existingIndex].hasPerfectGame = true;
-                }
+                if(gameData.hasPerfectGame) rankings[period][existingIndex].hasPerfectGame = true;
             }else{
-                // NOWY WPIS
-                rankings[period].push({
-                    username: gameData.username,
-                    score: gameData.score,
-                    attempts: gameData.attempts,
-                    hasPerfectGame: gameData.hasPerfectGame
-                })
+                rankings[period].push({ username: gameData.username, score: gameData.score, attempts: gameData.attempts, hasPerfectGame: gameData.hasPerfectGame })
             }
-            
-            // Sortowanie malejąco
             rankings[period].sort((a,b)=>b.score-a.score)
-            // Limit 10
             rankings[period]=rankings[period].slice(0,10)
         }
 
         // HINTS & UI
         function showHintPopup(){ showPopup('hintPopup') }
-        
-        // ZMIANA: Użycie flagi hint w grze
         function acceptHint(){ 
             hidePopup('hintPopup'); 
-            if (gameInstance) {
-                gameInstance.useHint(); // Mark hint as used
-                gameInstance.showHint(); 
-            }
+            if (gameInstance) { gameInstance.useHint(); gameInstance.showHint(); }
         }
         function declineHint(){ hidePopup('hintPopup') }
         function hideHint(){ document.getElementById('hintContainer').classList.remove('show') }
@@ -646,9 +617,7 @@
         function validateEmail(e){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)}
         
         function register(){
-            const e=document.getElementById('registerUsername').value.trim(),
-                  t=document.getElementById('registerEmail').value.trim(),
-                  o=document.getElementById('registerPassword').value.trim()
+            const e=document.getElementById('registerUsername').value.trim(), t=document.getElementById('registerEmail').value.trim(), o=document.getElementById('registerPassword').value.trim()
             if(!e||!t||!o)return showError('Wszystkie pola są wymagane!')
             if(!validateEmail(t))return showError('Proszę podać prawidłowy adres email!')
             if(users.find(n=>n.username.toLowerCase()===e.toLowerCase()))return showError('Nazwa użytkownika jest już zajęta!')
@@ -700,9 +669,7 @@
         function submitGuess(manualGuess){
             const e=document.getElementById('songSearchInput');
             const val = manualGuess || e.value.trim();
-            if(val && gameInstance) {
-                gameInstance.checkGuess(val);
-            }
+            if(val && gameInstance) { gameInstance.checkGuess(val); }
             e.value='';
             document.getElementById('songSuggestions').style.display='none';
             updateActionButton();
@@ -712,11 +679,7 @@
 
         function handleActionButtonClick() {
             const input = document.getElementById('songSearchInput');
-            if (input.value.trim() !== '') {
-                submitGuess();
-            } else {
-                skipToNext();
-            }
+            if (input.value.trim() !== '') { submitGuess(); } else { skipToNext(); }
         }
 
         document.addEventListener('click',e=>{const t=document.getElementById('userMenu'),o=document.getElementById('sideMenu');t&&!t.contains(e.target)&&hideUserDropdown(),o&&!o.contains(e.target)&&hideMenuDropdown()})
@@ -751,7 +714,7 @@
         }
 
         // ==========================================
-        // GŁÓWNA LOGIKA GRY (UPDATED)
+        // GŁÓWNA LOGIKA GRY
         // ==========================================
         function initGame(){
             const progressElements=document.querySelectorAll('.progress-time');
@@ -760,7 +723,7 @@
             let currentLevelIndex=0;
             let currentSong=null;
             let pendingTrack=null; 
-            let hintUsed=false; // ZMIANA: Flaga użycia podpowiedzi
+            let hintUsed=false;
             let audioObject = null;
             let audioTimeout = null;
             const fragmentDurations=[0.2,0.5,3,5,15]; 
@@ -775,7 +738,7 @@
                 showPopup('loadingPopup');
                 stopAudio();
                 clearPendingTrack();
-                hintUsed = false; // Reset hint flag
+                hintUsed = false;
                 
                 try {
                     currentSong = await DeezerService.getRandomTrack();
@@ -852,9 +815,7 @@
                     const item = document.createElement('div');
                     item.className = 'suggestion-item';
                     const coverImg = track.album && track.album.cover_small ? track.album.cover_small : '';
-                    
                     item.innerHTML = `<img src="${coverImg}" alt="cover"><div><span>${track.title}</span><small>${track.artist.name}</small></div>`;
-                    
                     item.addEventListener('mousedown', e => {
                         e.preventDefault();
                         document.getElementById('songSearchInput').value = `${track.title} - ${track.artist.name}`;
@@ -876,10 +837,7 @@
                 }).join(' ');
             }
 
-            // ZMIANA: Mark hint used
-            function useHint() {
-                hintUsed = true;
-            }
+            function useHint() { hintUsed = true; }
 
             function showHint(){
                 if(!currentSong) return;
@@ -889,17 +847,10 @@
             }
 
             function calculateScore(attemptNumber){
-                // ZMIANA: Jeśli użyto podpowiedzi, 0 punktów
                 if (hintUsed) return 0;
-
                 const baseScores=[1000,800,600,400,200];
                 const penalty=-100;
-                
-                if(attemptNumber<=4){
-                    return baseScores[attemptNumber];
-                } else {
-                    return penalty;
-                }
+                if(attemptNumber<=4){ return baseScores[attemptNumber]; } else { return penalty; }
             }
             
             function checkGuess(guessText){
@@ -987,22 +938,14 @@
             loadNewSong();
             
             gameInstance = {
-                loadNewSong: loadNewSong,
-                checkGuess: checkGuess,
-                skipToNext: skipToNextAttempt,
-                playCurrentFragment: playFragment,
-                showSuggestions: handleSuggestions,
-                showHint: showHint,
-                useHint: useHint,
-                stopAudio: stopAudio,
-                clearPendingTrack: clearPendingTrack,
+                loadNewSong: loadNewSong, checkGuess: checkGuess, skipToNext: skipToNextAttempt,
+                playCurrentFragment: playFragment, showSuggestions: handleSuggestions,
+                showHint: showHint, useHint: useHint, stopAudio: stopAudio, clearPendingTrack: clearPendingTrack,
                 get currentSong() { return currentSong; }
             };
         }
 
-        window.addEventListener('beforeunload', function() {
-            stopPlayTimeTracking();
-        });
+        window.addEventListener('beforeunload', function() { stopPlayTimeTracking(); });
     </script>
 </body>
 </html>
