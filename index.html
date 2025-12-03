@@ -7,7 +7,7 @@
     <style>
         /* STYLE BAZOWE */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
-        /* Przywrócone oryginalne tło gradientowe */
+        /* Tło gradientowe (bez matrixa) */
         body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;position:relative;padding-bottom: 60px;}
         .container{max-width:400px;width:100%;margin:0 auto}
         header{text-align:center;margin-bottom:40px;width:100%}
@@ -265,7 +265,7 @@
     <div class="popup-overlay" id="rankingPopup">
         <div class="popup success" style="max-width:500px">
             <div class="popup-icon">🏆</div>
-            <div class="popup-title">Rankingi</div>
+            <div class="popup-title">Rankingi (Suma Punktów)</div>
             <div class="ranking-tabs">
                 <div class="ranking-tab active" data-tab="daily">Dzienne</div>
                 <div class="ranking-tab" data-tab="weekly">Tygodniowe</div>
@@ -555,7 +555,7 @@
             },300)
         }
         function showRegistrationSuccess(){showPopup('registrationPopup')}
-        function showGameSuccess(e){document.getElementById('successMessageText').textContent=e,showPopup('successPopup')}
+        function showGameSuccess(e){document.getElementById('successMessageText').innerHTML=e,showPopup('successPopup')}
         function showGameFailure(e){document.getElementById('failureMessageText').textContent=e,showPopup('failurePopup')}
         function showRules(){hideMenuDropdown(),showPopup('rulesPopup')}
         function showRanking(){hideMenuDropdown(),loadRanking('daily'),showPopup('rankingPopup')}
@@ -837,10 +837,12 @@
 
                     updateRankings(score, currentAttemptIndex+1, hasPerfectGame);
                     
+                    // Zmiana: Dodanie informacji o utworze do wiadomości sukcesu
+                    let songInfo = `<div style="font-size:18px; color:#fff; margin-bottom:10px;">${currentSong.title} <span style="color:#a8dadc">- ${currentSong.artist}</span></div>`;
                     let msg = `Zgadłeś za ${currentAttemptIndex+1} razem! Zdobywasz ${score} punktów!`;
                     if(hintUsed) msg = `Zgadłeś! Ale użyłeś podpowiedzi: 0 pkt.`;
                     
-                    showGameSuccess(msg);
+                    showGameSuccess(songInfo + msg);
                     updateActionButton();
                     return true;
                 } else {
